@@ -20,8 +20,9 @@ def load_csv_data(data_path, sub_sample=False):
         yb = yb[::50]
         input_data = input_data[::50]
         ids = ids[::50]
-
-    return yb, input_data, ids
+    num_samples = len(y)
+    tinput_data = np.c_[np.ones(num_samples), input_data]
+    return yb, input_data, tinput_data, ids
 
 
 def predict_labels(weights, data):

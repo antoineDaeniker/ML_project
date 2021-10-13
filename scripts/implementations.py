@@ -81,8 +81,8 @@ def stochastic_gradient_descent(y, tx, initial_w, batch_size, max_iters, gamma):
             # store w and loss
             ws.append(w)
             losses.append(loss)
-        print("Gradient Descent({bi}/{ti}): loss={l}, w={w}".format(
-              bi=n_iter, ti=max_iters - 1, l=loss, w=w))
+        print("Gradient Descent({bi}/{ti}): loss={l}, w={w}, normgrad={normgrad}".format(
+              bi=n_iter, ti=max_iters - 1, l=loss, w=w, normgrad=np.linalg.norm(grad)))
     return losses[len(losses) - 1], ws[len(ws) - 1]
 
 
