@@ -13,7 +13,7 @@ def compute_loss(y, tx, w):
 
 def compute_gradient(y, tx, w):
     """Compute the gradient."""
-    return -1 / len(y) * tx.T @ (y - tx @ w)
+    return -tx.T @ (y - tx @ w) / len(y)
 
 
 def gradient_descent(y, tx, initial_w, max_iters, gamma):
@@ -81,9 +81,8 @@ def stochastic_gradient_descent(y, tx, initial_w, batch_size, max_iters, gamma):
             # store w and loss
             ws.append(w)
             losses.append(loss)
-        print("Gradient Descent({bi}/{ti}): loss={l}, w={w}, normgrad={normgrad}".format(
-              bi=n_iter, ti=max_iters - 1, l=loss, w=w, normgrad=np.linalg.norm(grad)))
-    return losses[len(losses) - 1], ws[len(ws) - 1]
+        print("Gradient Descent({bi}/{ti}): loss={l}, normgrad={normgrad}".format(bi=n_iter, ti=max_iters - 1, l=loss, normgrad=np.linalg.norm(grad)), end='\r')
+    return losses, ws[len(ws) - 1]
 
 
 def least_squares(y, tx):
@@ -197,3 +196,15 @@ def plot_train_test(train_errors, test_errors, lambdas, degree):
     leg = plt.legend(loc=1, shadow=True)
     leg.draw_frame(False)
     plt.savefig("ridge_regression")
+
+
+def normalize(data):
+    mean = np.mean(data)
+    std = np.std(data)
+    return (data - mean) / std
+
+
+
+
+
+
