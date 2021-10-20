@@ -94,14 +94,11 @@ def least_squares(y, tx):
 
 def build_poly(x, degree):
     """polynomial basis functions for input data x, for j=0 up to j=degree."""
-    poly = np.ones((len(x), 1))
-    for deg in range(1, degree+1):
-        poly = np.c_[poly, np.power(x, deg)]
+    poly = np.ones((x.shape[0], 1))
+    for feat in x.T:
+        for deg in range(1, degree+1):
+            poly = np.c_[poly, np.power(feat, deg)]
     return poly
-#def build_poly(x, degree):
-    """polynomial basis functions for input data x, for j=0 up to j=degree."""
-    
-#    return np.array([x**j for j in range(degree)])
 
 
 def ridge_regression(y, tx, lambda_):
@@ -157,6 +154,22 @@ def normalize(data):
     mean = np.mean(data)
     std = np.std(data)
     return (data - mean) / std
+
+############################################
+########### DATA PRE-PROCESSING ############
+############################################
+def data_process(tX):
+    temp = tX.copy()
+    tX_norm = np.zeros(tX.shape)
+    temp[temp == -999] = 0
+    mean_features = np.mean(temp, axis=0)
+    std_features = np.std(temp, axis=0)
+    for i, f in enumerate(tX.T):
+        f[f == -999] = mean_features[i]
+        #tX_norm[:, i] = f
+        tX_norm[:, i] = (f - mean_features[i]) / std_features[i]
+        
+    return np.array(tX_norm)
 
 
 
