@@ -172,6 +172,72 @@ def data_process(tX):
     return np.array(tX_norm)
 
 
+############################################
+###### FEATURES CORRELATION SELECTION ######
+############################################
+def feature_selection(tX, threshold, show_plot=False):
+    corr_mat = np.corrcoef(tX, rowvar=False)
+    
+    if show_plot:
+        plt.imshow(np.abs(corr_mat), cmap='Blues')
+        plt.colorbar()
+        plt.show()
+        
+    corr_indices = np.argwhere(np.abs(np.triu(corr_mat - np.eye(30))) > threshold)
+    
+    unique_ind1 = np.unique(corr_indices[:, 0])
+    unique_ind2 = np.unique(corr_indices[:, 1])
+    len1 = len(unique_ind1)
+    len2 = len(unique_ind2)
+    corr_ind_reduce_short = (unique_ind1, unique_ind2)[len(unique_ind1) > len(unique_ind2)]
+    corr_ind_reduce_big = (unique_ind1, unique_ind2)[len(unique_ind1) < len(unique_ind2)]
+    corr_ind_to_keep = []
+    for ind in corr_ind_reduce_short:
+        is_in = np.isin(ind, corr_ind_reduce_big)
+        if not is_in:
+            corr_ind_to_keep.append(ind)
+            
+    all_ind = np.unique(corr_indices.flatten())
+    corr_ind_to_throw = np.setdiff1d(all_ind, corr_ind_to_keep)
+    
+    return np.array(corr_ind_to_keep), corr_ind_to_throw
+
+
+###############################################################
+###### DIVIDE DATA W.R.T FEATURE WITH LOW VARIATION DATA ######
+###############################################################
+def subdivide_data(tX):
+    #Find the nb of different value in per feature
+    nb_diff_values = []
+    for feat in tX.T:
+        nb_diff_values.append(len(np.unique(feat)))
+        
+    #Create the different dataset w.r.t those different value (and remove the feature concern)
+    feat_ind = np.argmin(nb_diff_values)
+    feat_values = np.unique(tX[:, feat_ind])
+    data = [0] * len(feat_values)
+    for i, val in enumerate(feat_values):
+        data[i] = np.delete(tX[tX[:, feat_ind] == val], feat_ind, axis=1)
+    
+    #Remove irrelevant feature, for each data set
+    count_999 = []
+    for sub_data in data:
+        sub_count_999 = []
+        for feat in sub_data.T:
+            sub_count_999.append(len(feat[feat == -999]) / len(feat))
+        count_999.append(sub_count_999)
+        
+    count_999_ind = []
+    for sub_count in count_999:
+        indices = np.argwhere(np.array(sub_count) > 0.5)
+        #if len(indices) > 0:
+        count_999_ind.append(np.argwhere(np.array(sub_count) > 0.5))
+        
+    data_reduce = [0] * len(feat_values)
+    for i, indices in enumerate(count_999_ind):
+        data_reduce[i] = np.delete(data[i], np.array(indices), axis=1)
+        
+    return data_reduce
 
 
 
