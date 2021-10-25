@@ -151,6 +151,134 @@ def split_data(x, y, ratio, seed=1):
     return x[index_tr], y[index_tr], x[index_te], y[index_te]
 
 
+def cross_validation(y, x, k_indices, k, lambda_, degree):
+    """return the loss of ridge regression."""
+    
+    te_indices = k_indices[k]
+    tr_indices = np.concatenate((k_indices[:k], k_indices[k+1:]), axis=0).reshape(-1)
+    
+    x_tr = x[tr_indices]
+    y_tr = y[tr_indices]
+    x_te = x[te_indices]
+    y_te = y[te_indices]
+
+    tx_tr = build_poly(x_tr, degree)
+    tx_te = build_poly(x_te, degree)
+
+    w = ridge_regression(y_tr, tx_tr, lambda_)
+    
+    loss_tr = np.sqrt(2 * compute_mse(y_tr, tx_tr, w))
+    loss_te = np.sqrt(2 * compute_mse(y_te, tx_te, w))
+    return loss_tr, loss_te
+
+
+def sigmoid(t):
+    """apply the sigmoid function on t."""
+    return 1 / (1 + np.exp(-t))
+
+
+def calculate_loss(y, tx, w):
+    """compute the loss: negative log likelihood."""
+    pred = sigmoid(tx.dot(w))
+    loss_i = y.T.dot(np.log(pred)) + (1 - y).T.dot(np.log(1 - pred))
+    return -np.sum(loss_i)
+
+
+def calculate_gradient(y, tx, w):
+    """compute the gradient of loss."""
+    pred = sigmoid(tx.dot(w))
+    return tx.T.dot(pred - y)
+
+
+def learning_by_gradient_descent(y, tx, w, gamma):
+    """
+    Do one step of gradient descent using logistic regression.
+    Return the loss and the updated w.
+    """
+    loss = calculate_loss(y, tx, w)
+    grad = calculate_gradient(y, tx, w)
+    w = w - gamma * grad
+    return loss, w
+
+
+def logistic_regression_gradient_descent_demo(y, x):
+    # init parameters
+    max_iter = 10000
+    threshold = 1e-8
+    gamma = 0.01
+    losses = []
+
+    # build tx
+    tx = np.c_[np.ones((y.shape[0], 1)), x]
+    w = np.zeros((tx.shape[1], 1))
+
+    # start the logistic regression
+    for iter in range(max_iter):
+        # get loss and update w.
+        loss, w = learning_by_gradient_descent(y, tx, w, gamma)
+        # log info
+        if iter % 100 == 0:
+            print("Current iteration={i}, loss={l}".format(i=iter, l=loss))
+        # converge criterion
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break
+    # visualization
+    visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_gradient_descent", True)
+    print("loss={l}".format(l=calculate_loss(y, tx, w)))
+
+    
+def calculate_hessian(y, tx, w):
+    """return the Hessian of the loss function."""
+    sig = sigmoid(tx.dot(w))
+    pred = np.diag(sig.T[0])
+    return tx.T.dot(np.multiply(pred, (1 - pred))).dot(tx)
+
+
+def logistic_regression(y, tx, w):
+    """return the loss, gradient, and Hessian."""
+    return calculate_loss(y, tx, w), calculate_gradient(y, tx, w), calculate_hessian(y, tx, w)
+
+
+def learning_by_newton_method(y, tx, w, gamma):
+    """
+    Do one step on Newton's method.
+    return the loss and updated w.
+    """
+    loss, grad, hess = logistic_regression(y, tx, w)
+    w = np.linalg.solve(hess, hess.dot(w) - gamma * grad)
+    return loss, w
+
+
+def logistic_regression_newton_method_demo(y, x):
+    # init parameters
+    max_iter = 100
+    threshold = 1e-8
+    lambda_ = 0.1
+    gamma = 1.
+    losses = []
+
+    # build tx
+    tx = np.c_[np.ones((y.shape[0], 1)), x]
+    w = np.zeros((tx.shape[1], 1))
+
+    # start the logistic regression
+    for iter in range(max_iter):
+        # get loss and update w.
+        loss, w = learning_by_newton_method(y, tx, w, gamma)
+        # log info
+        if iter % 1 == 0:
+            print("Current iteration={i}, the loss={l}".format(i=iter, l=loss))
+        # converge criterion
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break
+    # visualization
+    visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_newton_method",True)
+    print("loss={l}".format(l=calculate_loss(y, tx, w)))
+
+
+
 ############################################
 ########### NORMALIZE THE DATA #############
 ############################################
