@@ -28,7 +28,7 @@ print("DATA TRAIN PROCESSING DONE")
 
 ##################### TRAINING ############################
 # Define the parameters of the algorithm.
-max_iters = 1000
+max_iters = 800
 gamma = 0.1
 batch_size = 1
 
@@ -42,13 +42,13 @@ sgd_losses, sgd_ws = gradient_descent(
 
 for i in rmv_idx:
     sgd_ws = np.insert(sgd_ws, i, 0)
-print("RESULTING W : ", sgd_ws)
+print("\nRESULTING W : ", sgd_ws)
 
 end_time = datetime.datetime.now()
 
 # Print result
 exection_time = (end_time - start_time).total_seconds()
-print("\nSGD: execution time={t:.3f} seconds".format(t=exection_time))
+print("SGD: execution time={t:.3f} seconds".format(t=exection_time))
 print("TRAINING DONE")
 ###########################################################
 
