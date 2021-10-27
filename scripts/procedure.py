@@ -1,71 +1,63 @@
+#%%
 import numpy as np
 import matplotlib.pyplot as plt
 from implementations import *
 import datetime
 
 from proj1_helpers import *
+
 DATA_TRAIN_PATH = '/Users/AntoineDaeniker/Documents/EPFL/Master 1/ML_course/projects/project1/data/train.csv' # TODO: download train data and supply path here 
-y, tX, tXt, ids = load_csv_data(DATA_TRAIN_PATH)
-print(y.shape, tX.shape)
+y, X, Xt, ids = load_csv_data(DATA_TRAIN_PATH)
+print(y.shape, X.shape)
+
+DATA_TEST_PATH = '/Users/AntoineDaeniker/Documents/EPFL/Master 1/ML_course/projects/project1/data/test.csv' # TODO: download train data and supply path here 
+y_test, X_test, Xt_test, ids_test = load_csv_data(DATA_TEST_PATH)
 
 
-###### PRE_PROCESSING #######
-temp = tX.copy()
-tX_norm = np.zeros(tX.shape)
-temp[temp == -999] = 0
-mean_features = np.mean(temp, axis=0)
-std_features = np.std(temp, axis=0)
-for i, f in enumerate(tX.T):
-    f[f == -999] = mean_features[i]
-    #tX_norm[:, i] = f
-    tX_norm[:, i] = (f - mean_features[i]) / std_features[i]
+#%%
+##################### DATA TRAIN PROCESSING #####################
+data_irr, irr_ind = delete_irr_features(X, 0.5)
+data_irr_corr, corr_ind,_ = feature_correlation(data_irr, 0.9)
+data_irr_corr_norm, norm_ind = normalize_data(data_irr_corr)
 
-tXt_norm = np.c_[np.ones(len(y)) / len(y), tX_norm]
+rmv_idx = np.unique(np.concatenate((irr_ind, corr_ind)))
+rmv_idx = np.insert(rmv_idx, -1, norm_ind)
+rmv_idx = np.unique(rmv_idx)
+print("DATA TRAIN PROCESSING DONE")
+###########################################################
 
-
-##### TRAINING #####
-max_iters = 200
-gamma = 2*10**(-3)
+##################### TRAINING ############################
+# Define the parameters of the algorithm.
+max_iters = 1000
+gamma = 0.1
 batch_size = 1
 
 # Initialization
-w_initial = np.random.rand(tXt_norm.shape[1])
+w_initial = np.zeros(data_irr_corr_norm.shape[1])
 
 # Start SGD.
 start_time = datetime.datetime.now()
 sgd_losses, sgd_ws = gradient_descent(
-    y, tXt_norm, w_initial, max_iters, gamma)
+    y, data_irr_corr_norm, w_initial, max_iters, gamma)
+
+for i in rmv_idx:
+    sgd_ws = np.insert(sgd_ws, i, 0)
+print("RESULTING W : ", sgd_ws)
+
 end_time = datetime.datetime.now()
 
 # Print result
 exection_time = (end_time - start_time).total_seconds()
-print("\nSGD: execution time={t:.3f} seconds, gamma = {gamma}\n".format(t=exection_time, gamma=gamma))
+print("\nSGD: execution time={t:.3f} seconds".format(t=exection_time))
+print("TRAINING DONE")
+###########################################################
 
+################# DATA TEST PROCESSING ####################
+#data_test = np.delete(X_test, rmv_idx, axis=1)
+print("DATA TEST PROCESSING DONE")
+###########################################################
 
-##### PLOT LOSSES #####
-plt.plot(np.arange(max_iters), sgd_losses)
-
-
-
-DATA_TEST_PATH = '/Users/AntoineDaeniker/Documents/EPFL/Master 1/ML_course/projects/project1/data/test.csv' # TODO: download train data and supply path here 
-y_test, tX_test, tXt_test, ids_test = load_csv_data(DATA_TEST_PATH)
-
-
-###### PRE_PROCESSING #######
-temp_test = tX_test.copy()
-tX_norm_test = np.zeros(tX_test.shape)
-temp_test[temp_test == -999] = 0
-mean_features_test = np.mean(temp_test, axis=0)
-std_features_test = np.std(temp_test, axis=0)
-for i, f in enumerate(tX_test.T):
-    f[f == -999] = mean_features_test[i]
-    tX_norm_test[:, i] = (f - mean_features_test[i]) / std_features_test[i]
-    
-tXt_norm_test = np.c_[np.ones(len(y_test)) / len(y_test), tX_norm_test]
-
-
-pred_train = predict_labels(sgd_ws, tXt_norm)
-print(len(pred_train[abs(pred_train-y) == 0]) * 100 / len(y))
-
-pred_test = predict_labels(sgd_ws, tXt_norm_test)
-print(len(pred_test[abs(pred_test-y_test) == 0]) * 100 / len(y_test))
+######################## ACCURACY #########################
+acc = accuracy(sgd_ws, X_test, y_test, y_test.shape[0])
+print("ACCURACY : ", acc)
+# %%
