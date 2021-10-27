@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from proj1_helpers import *
+
+from .proj1_helpers import *
 
 """ TODO split into multiple util files"""
 
@@ -409,11 +410,11 @@ def data_test_preprocessing(tX_test, y_test, rmv_feat_idx_list, threshold_irr, t
     return new_data_test_list, y_list_test
     
 
-def accuracy(w, data, y, y_test_len):
+def get_predictions(w, data, y, y_test_len):
     pred = predict_labels(w, data)
-    accuracy = len(pred[pred == y]) * 100 / y_test_len
-        
-    return accuracy
+    return pred
+    # accuracy = len(pred[pred == y]) * 100 / y_test_len
+    # return accuracy
     
     
 
