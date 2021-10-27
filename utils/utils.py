@@ -89,7 +89,7 @@ def stochastic_gradient_descent(y, tx, initial_w, batch_size, max_iters, gamma):
     return losses, ws[len(ws) - 1]
 
 
-def least_squares(y, tx):
+def calculate_least_squares(y, tx):
     """calculate the least squares solution."""
 
     w = np.linalg.solve (tx.T.dot(tx), tx.T.dot(y))

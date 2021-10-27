@@ -1,8 +1,7 @@
 """ 
     Write these functions:
     
-    least squares GD(y, tx, initial w,
-max iters, gamma)
+
 
 
 least squares SGD(y, tx, initial w,
@@ -22,3 +21,17 @@ reg logistic regression(y, tx, lambda ,
 initial w, max iters, gamma)
 
 """
+
+"""
+Functions have return type (w, loss)
+"""
+
+
+def least_squares_GD(y, tx, initial_w, max_iters, gamma):
+    NotImplemented()
+
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
+    NotImplemented()
+
+
+
