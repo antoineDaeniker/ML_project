@@ -170,8 +170,8 @@ def cross_validation(y, x, k_indices, k, lambda_, degree):
 
     w = ridge_regression(y_tr, tx_tr, lambda_)
     
-    loss_tr = np.sqrt(2 * compute_mse(y_tr, tx_tr, w))
-    loss_te = np.sqrt(2 * compute_mse(y_te, tx_te, w))
+    loss_tr = np.sqrt(2 * compute_loss(y_tr, tx_tr, w))
+    loss_te = np.sqrt(2 * compute_loss(y_te, tx_te, w))
     return loss_tr, loss_te
 
 
@@ -238,7 +238,7 @@ def calculate_hessian(y, tx, w):
     return tx.T.dot(np.multiply(pred, (1 - pred))).dot(tx)
 
 
-def logistic_regression(y, tx, w):
+def calculate_loss_grad_hess(y, tx, w):
     """return the loss, gradient, and Hessian."""
     return calculate_loss(y, tx, w), calculate_gradient(y, tx, w), calculate_hessian(y, tx, w)
 
@@ -248,7 +248,7 @@ def learning_by_newton_method(y, tx, w, gamma):
     Do one step on Newton's method.
     return the loss and updated w.
     """
-    loss, grad, hess = logistic_regression(y, tx, w)
+    loss, grad, hess = calculate_loss_grad_hess(y, tx, w)
     w = np.linalg.solve(hess, hess.dot(w) - gamma * grad)
     return loss, w
 
@@ -278,6 +278,51 @@ def logistic_regression_newton_method_demo(y, x):
             break
     # visualization
     visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_newton_method",True)
+    print("loss={l}".format(l=calculate_loss(y, tx, w)))
+
+
+def penalized_logistic_regression(y, tx, w, lambda_):
+    """return the loss, gradient"""
+    loss = calculate_loss(y, tx, w) + lambda_ * np.linalg.norm(w)**2
+    grad = calculate_gradient(y, tx, w) + 2 * lambda_ * w
+    return loss, grad
+
+
+def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
+    """
+    Do one step of gradient descent, using the penalized logistic regression.
+    Return the loss and updated w.
+    """
+    loss, grad = penalized_logistic_regression(y, tx, w, lambda_)
+    w = w - gamma * grad
+    return loss, w
+
+
+def logistic_regression_penalized_gradient_descent_demo(y, x):
+    # init parameters
+    max_iter = 10000
+    gamma = 0.01
+    lambda_ = 0.1
+    threshold = 1e-8
+    losses = []
+
+    # build tx
+    tx = np.c_[np.ones((y.shape[0], 1)), x]
+    w = np.zeros((tx.shape[1], 1))
+
+    # start the logistic regression
+    for iter in range(max_iter):
+        # get loss and update w.
+        loss, w = learning_by_penalized_gradient(y, tx, w, gamma, lambda_)
+        # log info
+        if iter % 100 == 0:
+            print("Current iteration={i}, loss={l}".format(i=iter, l=loss))
+        # converge criterion
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break
+    # visualization
+    visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_penalized_gradient_descent",True)
     print("loss={l}".format(l=calculate_loss(y, tx, w)))
 
 
