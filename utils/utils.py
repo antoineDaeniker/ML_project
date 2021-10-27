@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from proj1_helpers import *
 
+""" TODO split into multiple util files"""
+
 def compute_loss(y, tx, w):
     """Calculate the loss.
 

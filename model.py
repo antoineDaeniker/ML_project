@@ -1,10 +1,7 @@
 #%%
-import numpy as np
-import matplotlib.pyplot as plt
-from implementations import *
 import datetime
 
-from proj1_helpers import *
+from utils.proj1_helpers import *
 
 DATA_TRAIN_PATH = '/Users/AntoineDaeniker/Documents/EPFL/Master 1/ML_course/projects/project1/data/train.csv' # TODO: download train data and supply path here 
 y, X, Xt, ids = load_csv_data(DATA_TRAIN_PATH)
