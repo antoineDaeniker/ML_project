@@ -27,7 +27,7 @@ def train(X, y, rmv_idx, max_iters=800, gamma=1e-5, batch_size=1, save_weights=F
     # for i in rmv_idx:
     #     w = np.insert(w, i, 0)
 
-    return w
+    return w, loss
 
 
 def test(w, X_test, y_test):
@@ -41,25 +41,30 @@ def run_model(save_weights=True, retrain=True, internal_test=True, create_submis
     y, X, Xt, ids = load_csv_data('data/train.csv')
     print('Data shape: ', y.shape, X.shape)
     X, y, rmv_idx = preprocess_train_data(X, y)
-    X_train, y_train, X_test, y_test = split_data(X, y, 0.6)
-    y_train_dist = np.asarray((np.unique(y_train, return_counts=True))).T
-    y_test_dist = np.asarray((np.unique(y_test, return_counts=True))).T
-    with np.printoptions(precision=0, suppress=True):
-        print(f'y_train distribution: {y_train_dist} \ny_test distribution: {y_test_dist}')
+    k_fold = 10
+    k_indices = build_k_indices(y, k_fold)
+    ws = []
+    losses = []
+    for k in range(k_fold):
+        X_train, y_train, X_test, y_test = split_cross_validation(y, X, k_indices, k)
+        y_train_dist = np.asarray((np.unique(y_train, return_counts=True))).T
+        y_test_dist = np.asarray((np.unique(y_test, return_counts=True))).T
+        with np.printoptions(precision=0, suppress=True):
+            print(f'y_train distribution: {y_train_dist} \ny_test distribution: {y_test_dist}')
 
-    if not retrain:
-        w = np.loadtxt('sgd_model.csv', delimiter=',')
-    else:
-        start_time = datetime.now()
-        w = train(X_train, y_train, rmv_idx)
-        if save_weights:
-            np.savetxt('sgd_model.csv', np.asarray(w), delimiter=',')
-        end_time = datetime.now()
-        exection_time = (end_time - start_time).total_seconds()
-        print("Model training time={t:.3f} seconds".format(t=exection_time))
+        if not retrain:
+            w = np.loadtxt('sgd_model.csv', delimiter=',')
+        else:
+            start_time = datetime.now()
+            w, loss = train(X_train, y_train, rmv_idx)
+            if save_weights:
+                np.savetxt('sgd_model.csv', np.asarray(w), delimiter=',')
+            end_time = datetime.now()
+            exection_time = (end_time - start_time).total_seconds()
+            print("Model training time={t:.3f} seconds".format(t=exection_time))
 
-    if internal_test:
-        test(w, X_test, y_test)
+        if internal_test:
+            test(w, X_test, y_test)
 
     if create_submission:
         print('Creating submission')

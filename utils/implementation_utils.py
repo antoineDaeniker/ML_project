@@ -194,6 +194,20 @@ def split_data(x, y, ratio, seed=1):
     return x[index_tr], y[index_tr], x[index_te], y[index_te]
 
 
+def split_cross_validation(y, x, k_indices, k):
+    """return the loss of ridge regression."""
+    
+    te_indices = k_indices[k]
+    tr_indices = np.concatenate((k_indices[:k], k_indices[k+1:]), axis=0).reshape(-1)
+    
+    x_tr = x[tr_indices]
+    y_tr = y[tr_indices]
+    x_te = x[te_indices]
+    y_te = y[te_indices]
+
+    return x_tr, y_tr, x_te, y_te
+
+
 def cross_validation(y, x, k_indices, k, lambda_, degree):
     """return the loss of ridge regression."""
     
@@ -322,8 +336,6 @@ def logistic_regression_newton_method_demo(y, x):
 
 
 
-
-
 def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
     """
     Do one step of gradient descent, using the penalized logistic regression.
@@ -377,7 +389,7 @@ def normalize_data(tX):
     data_reduce = np.delete(tX, std_0_feat_ind, axis=1)
     data_norm = np.zeros(data_reduce.shape)
     for i, f in enumerate(data_reduce.T):
-        f[f == -999] = 0
+        f[f == -999] = mean_features[i]
         data_norm[:, i] = (f - mean_features[i]) / std_features[i]
         
     return np.array(data_norm), np.array(std_0_feat_ind)
