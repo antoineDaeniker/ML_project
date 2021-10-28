@@ -174,6 +174,30 @@ def cross_validation(y, x, k_indices, k, lambda_, degree):
     loss_te = np.sqrt(2 * compute_loss(y_te, tx_te, w))
     return loss_tr, loss_te
 
+def build_k_indices(y, k_fold, seed):
+    """build k indices for k-fold."""
+    num_row = y.shape[0]
+    interval = int(num_row / k_fold)
+    np.random.seed(seed)
+    indices = np.random.permutation(num_row)
+    k_indices = [indices[k * interval: (k + 1) * interval]
+                 for k in range(k_fold)]
+    return np.array(k_indices)
+
+
+def split_train_valid(y, x, k):
+    seed = 12
+    k_indices = build_k_indices(y, k, seed)
+    te_indices = k_indices[k]
+    tr_indices = np.concatenate((k_indices[:k], k_indices[k+1:]), axis=0).reshape(-1)
+    
+    x_tr = x[tr_indices]
+    y_tr = y[tr_indices]
+    x_te = x[te_indices]
+    y_te = y[te_indices]
+    
+    return x_tr, y_tr, x_te, y_te
+
 
 def sigmoid(t):
     """apply the sigmoid function on t."""
