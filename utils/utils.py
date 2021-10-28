@@ -185,9 +185,8 @@ def build_k_indices(y, k_fold, seed):
     return np.array(k_indices)
 
 
-def split_train_valid(y, x, k):
+def split_train_valid(y, x, k_indices, k):
     seed = 12
-    k_indices = build_k_indices(y, k, seed)
     te_indices = k_indices[k]
     tr_indices = np.concatenate((k_indices[:k], k_indices[k+1:]), axis=0).reshape(-1)
     
