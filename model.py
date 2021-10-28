@@ -1,70 +1,75 @@
-#%%
-import datetime
-from utils.proj1_helpers import *
-from utils.utils import *
+# %%
+from datetime import datetime
+
+from implementations import reg_logistic_regression
+from utils.preprocessing_utils import preprocess_train_data
+from utils.io_utils import *
+from utils.implementation_utils import *
 import time
 
-def run_model():
-    DATA_TRAIN_PATH = 'data/train.csv' # TODO: download train data and supply path here
-    y, X, Xt, ids = load_csv_data(DATA_TRAIN_PATH)
-    print(y.shape, X.shape)
+import logging
 
-    DATA_TEST_PATH = 'data/test.csv' # TODO: download train data and supply path here
-    y_test, X_test, Xt_test, ids_test = load_csv_data(DATA_TEST_PATH)
+logger = logging.getLogger(__name__)
 
 
-    #%%
-    ##################### DATA TRAIN PROCESSING #####################
-    data_irr, irr_ind = delete_irr_features(X, 0.5)
-    data_irr_corr, corr_ind,_ = feature_correlation(data_irr, 0.9)
-    data_irr_corr_norm, norm_ind = normalize_data(data_irr_corr)
+def train(X, y, rmv_idx, max_iters=800, gamma=1e-5, batch_size=1, save_weights=False):
+    w, loss = reg_logistic_regression(
+        y=y,
+        tx=X,
+        lambda_=1e-8,
+        initial_w=np.zeros(X.shape[1]),
+        max_iters=max_iters,
+        gamma=gamma,
+    )
 
-    rmv_idx = np.unique(np.concatenate((irr_ind, corr_ind)))
-    rmv_idx = np.insert(rmv_idx, -1, norm_ind)
-    rmv_idx = np.unique(rmv_idx)
-    print("DATA TRAIN PROCESSING DONE")
-    ###########################################################
+    logger.info(f'Final loss value for trained model: {loss}')
 
-    ##################### TRAINING ############################
-    # Define the parameters of the algorithm.
-    max_iters = 800
-    gamma = 0.1
-    batch_size = 1
+    # for i in rmv_idx:
+    #     w = np.insert(w, i, 0)
 
-    # Initialization
-    w_initial = np.zeros(data_irr_corr_norm.shape[1])
+    return w
 
-    # Start SGD.
-    start_time = datetime.datetime.now()
-    sgd_losses, sgd_ws = gradient_descent(
-        y, data_irr_corr_norm, w_initial, max_iters, gamma)
 
-    # Save weights
-    np.savetxt('sgd_model.csv', np.asarray(sgd_ws), delimiter=',')
+def test(w, X_test, y_test):
+    y_pred = predict_labels(w, X_test)
+    y_test[np.where(y_test <= 0)] = -1
+    accuracy = get_accuracy(y_pred, y_test)
+    print(f'Model accuracy: {accuracy}')
 
-    # Load weights
-    sgd_ws = np.loadtxt('sgd_model.csv', delimiter=',')
 
-    for i in rmv_idx:
-        sgd_ws = np.insert(sgd_ws, i, 0)
-    print("\nRESULTING W : ", sgd_ws)
+def run_model(save_weights=True, use_saved_weights=True, internal_test=True, create_submission=True):
+    y, X, Xt, ids = load_csv_data('data/train.csv')
+    print('Data shape: ', y.shape, X.shape)
+    X, y, rmv_idx = preprocess_train_data(X, y)
+    X_train, y_train, X_test, y_test = split_data(X, y, 0.8)
 
-    end_time = datetime.datetime.now()
+    if use_saved_weights:
+        w = np.loadtxt('sgd_model.csv', delimiter=',')
+    else:
+        start_time = datetime.now()
+        w = train(X_train, y_train, rmv_idx)
+        if save_weights:
+            np.savetxt('sgd_model.csv', np.asarray(w), delimiter=',')
+        end_time = datetime.now()
+        exection_time = (end_time - start_time).total_seconds()
+        print("Model training time={t:.3f} seconds".format(t=exection_time))
 
-    # Print result
-    exection_time = (end_time - start_time).total_seconds()
-    print("SGD: execution time={t:.3f} seconds".format(t=exection_time))
-    print("TRAINING DONE")
-    ###########################################################
+    if internal_test:
+        test(w, X_test, y_test)
 
-    ################# DATA TEST PROCESSING ####################
-    #data_test = np.delete(X_test, rmv_idx, axis=1)
-    print("DATA TEST PROCESSING DONE")
-    ###########################################################
+    if create_submission:
+        print('Creating submission')
+        w_ = w
+        for i in rmv_idx:
+            w_ = np.insert(w_, i, 0)
+        _, X_test, _, ids_test = load_csv_data('data/test.csv')
+        y_pred = predict_labels(w_, X_test)
+        create_csv_submission(ids_test, y_pred, f'data/submissions/submission_{time.strftime("%Y%m%d-%H%M%S")}.csv')
 
-    ######################## ACCURACY #########################
-    predictions = get_predictions(sgd_ws, X_test, y_test, y_test.shape[0])
 
-    create_csv_submission(ids_test, predictions, f'data/submissions/submission_{time.strftime("%Y%m%d-%H%M%S")}.csv')
-    # %%
-
+"""
+    CROSS VALIDATION
+    NORMALISATION without removed features
+    BIAS TERM WITH WEIGHT 1 (after normalising)
+    SPLITTING DATA 
+"""

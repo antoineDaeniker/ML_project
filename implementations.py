@@ -1,4 +1,5 @@
-from utils.utils import *
+from utils.implementation_utils import penalized_logistic_regression
+from utils.implementation_utils import *
 
 
 def least_squares_GD(y, tx, initial_w, max_iters, gamma):

@@ -1,9 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-from .proj1_helpers import *
+from .io_utils import *
 
 """ TODO split into multiple util files"""
+
+def penalized_logistic_regression(y, tx, w, lambda_):
+    """return the loss, gradient"""
+    loss = calculate_loss(y, tx, w) + lambda_ * np.linalg.norm(w)**2
+    grad = calculate_gradient(y, tx, w) + 2 * lambda_ * w
+    return loss, grad
 
 def compute_loss(y, tx, w):
     """Calculate the loss.
@@ -145,7 +150,7 @@ def build_k_indices(y, k_fold, seed=1):
     k_indices = [indices[k * interval: (k + 1) * interval] for k in range(k_fold)]
     return np.array(k_indices)
     
-def cross_validation_for_rgr(y, tx, k_fold, seed=1, k, lambda_, initial_w, max_iters, gamma):
+def cross_validation_for_rgr(y, tx, k_fold, k, lambda_, initial_w, max_iters, gamma, seed=1):
     """return the loss of ridge regression."""
     rmse_tr = []
     rmse_te = []
@@ -160,8 +165,8 @@ def cross_validation_for_rgr(y, tx, k_fold, seed=1, k, lambda_, initial_w, max_i
         tr_indice = tr_indice.reshape(-1)
         y_te = y[te_indice]
         y_tr = y[tr_indice]
-        tx_te = x[te_indice]
-        tx_tr = x[tr_indice]
+        tx_te = tx[te_indice]
+        tx_tr = tx[tr_indice]
     
         w, loss = reg_logistic_regression(y_tr, tx_tr, lambda_ , initial_w, max_iters, gamma)
         
@@ -316,11 +321,7 @@ def logistic_regression_newton_method_demo(y, x):
     print("loss={l}".format(l=calculate_loss(y, tx, w)))
 
 
-def penalized_logistic_regression(y, tx, w, lambda_):
-    """return the loss, gradient"""
-    loss = calculate_loss(y, tx, w) + lambda_ * np.linalg.norm(w)**2
-    grad = calculate_gradient(y, tx, w) + 2 * lambda_ * w
-    return loss, grad
+
 
 
 def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
@@ -490,12 +491,23 @@ def data_test_preprocessing(tX_test, y_test, rmv_feat_idx_list, threshold_irr, t
     return new_data_test_list, y_list_test
     
 
-def get_predictions(w, data, y, y_test_len):
-    pred = predict_labels(w, data)
+def get_predictions(w, X_test):
+    pred = predict_labels(w, X_test)
     return pred
-    # accuracy = len(pred[pred == y]) * 100 / y_test_len
-    # return accuracy
-    
-    
 
+    
+    
+def get_accuracy(y_pred, y_gt):
+    accuracy = len(y_pred[y_pred == y_gt]) * 100 / y_gt.shape[0]
+    return accuracy
+
+
+"""
+    # Save weights
+    np.savetxt('sgd_model.csv', np.asarray(sgd_ws), delimiter=',')
+
+    # Load weights
+    sgd_ws = np.loadtxt('sgd_model.csv', delimiter=',')
+
+"""
 

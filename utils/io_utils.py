@@ -31,7 +31,6 @@ def predict_labels(weights, data):
     print("y_pred mean : ", np.mean(y_pred))
     y_pred[np.where(y_pred <= 0)] = -1
     y_pred[np.where(y_pred > 0)] = 1
-    
     return y_pred
 
 
