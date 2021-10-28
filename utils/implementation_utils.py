@@ -377,7 +377,7 @@ def normalize_data(tX):
     data_reduce = np.delete(tX, std_0_feat_ind, axis=1)
     data_norm = np.zeros(data_reduce.shape)
     for i, f in enumerate(data_reduce.T):
-        f[f == -999] = mean_features[i]
+        f[f == -999] = 0
         data_norm[:, i] = (f - mean_features[i]) / std_features[i]
         
     return np.array(data_norm), np.array(std_0_feat_ind)

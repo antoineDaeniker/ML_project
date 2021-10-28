@@ -37,13 +37,17 @@ def test(w, X_test, y_test):
     print(f'Model accuracy: {accuracy}')
 
 
-def run_model(save_weights=True, use_saved_weights=True, internal_test=True, create_submission=True):
+def run_model(save_weights=True, retrain=True, internal_test=True, create_submission=True):
     y, X, Xt, ids = load_csv_data('data/train.csv')
     print('Data shape: ', y.shape, X.shape)
     X, y, rmv_idx = preprocess_train_data(X, y)
-    X_train, y_train, X_test, y_test = split_data(X, y, 0.8)
+    X_train, y_train, X_test, y_test = split_data(X, y, 0.6)
+    y_train_dist = np.asarray((np.unique(y_train, return_counts=True))).T
+    y_test_dist = np.asarray((np.unique(y_test, return_counts=True))).T
+    with np.printoptions(precision=0, suppress=True):
+        print(f'y_train distribution: {y_train_dist} \ny_test distribution: {y_test_dist}')
 
-    if use_saved_weights:
+    if not retrain:
         w = np.loadtxt('sgd_model.csv', delimiter=',')
     else:
         start_time = datetime.now()
