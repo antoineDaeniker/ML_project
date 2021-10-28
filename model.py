@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def train(X, y, rmv_idx, max_iters=800, gamma=1e-5, batch_size=1, save_weights=False):
+def train(X, y, rmv_idx, max_iters=800, gamma=1e-5, batch_size=1, save_weights=False, add_bias_term=True):
     w, loss = reg_logistic_regression(
         y=y,
         tx=X,
@@ -30,6 +30,10 @@ def train(X, y, rmv_idx, max_iters=800, gamma=1e-5, batch_size=1, save_weights=F
     return w, loss
 
 
+def train_with_splitted_data():
+    NotImplemented()
+
+
 def test(w, X_test, y_test):
     y_pred = predict_labels(w, X_test)
     y_test[np.where(y_test <= 0)] = -1
@@ -37,7 +41,7 @@ def test(w, X_test, y_test):
     print(f'Model accuracy: {accuracy}')
 
 
-def run_model(save_weights=True, retrain=True, internal_test=True, create_submission=True):
+def run_model(save_weights=True, retrain=True, internal_test=True, create_submission=True, custom_split=False):
     y, X, Xt, ids = load_csv_data('data/train.csv')
     print('Data shape: ', y.shape, X.shape)
     X, y, rmv_idx = preprocess_train_data(X, y)
@@ -56,6 +60,7 @@ def run_model(save_weights=True, retrain=True, internal_test=True, create_submis
             w = np.loadtxt('sgd_model.csv', delimiter=',')
         else:
             start_time = datetime.now()
+
             w, loss = train(X_train, y_train, rmv_idx)
             if save_weights:
                 np.savetxt('sgd_model.csv', np.asarray(w), delimiter=',')
