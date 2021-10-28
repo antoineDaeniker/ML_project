@@ -375,6 +375,14 @@ def logistic_regression_penalized_gradient_descent_demo(y, x):
 
 
 
+def find_best_w(ws, losses):
+    w_best = []
+    for loss, w in zip(losses, ws):
+        idx = np.argmin(loss)
+        w_best.append(w[idx])
+    return w_best
+
+
 ############################################
 ########### NORMALIZE THE DATA #############
 ############################################
@@ -384,13 +392,14 @@ def normalize_data(tX):
     mean_features = np.mean(temp, axis=0)
     std_features = np.std(temp, axis=0)
     std_0_feat_ind = np.squeeze(np.argwhere(std_features <= 0.001))
-    mean_features = np.delete(mean_features, std_0_feat_ind)
-    std_features = np.delete(std_features, std_0_feat_ind)
+    #mean_features = np.delete(mean_features, std_0_feat_ind)
+    #std_features = np.delete(std_features, std_0_feat_ind)
     data_reduce = np.delete(tX, std_0_feat_ind, axis=1)
-    data_norm = np.zeros(data_reduce.shape)
-    for i, f in enumerate(data_reduce.T):
-        f[f == -999] = mean_features[i]
-        data_norm[:, i] = (f - mean_features[i]) / std_features[i]
+    data_norm = np.zeros(tX.shape)
+    for i, f in enumerate(tX.T):
+        if std_features[i] != 0 :
+            f[f == -999] = mean_features[i]
+            data_norm[:, i] = (f - mean_features[i]) / std_features[i]
         
     return np.array(data_norm), np.array(std_0_feat_ind)
 
@@ -399,7 +408,8 @@ def normalize_data(tX):
 ###### FEATURES CORRELATION SELECTION ######
 ############################################
 def feature_correlation(tX, threshold, show_plot=False):
-    corr_mat = np.corrcoef(tX, rowvar=False)
+    corr_mat = np.ma.corrcoef(tX, rowvar=False)
+    #corr_mat[corr_mat == np.nan] = 0
     
     if show_plot:
         plt.imshow(np.abs(corr_mat), cmap='Blues')
@@ -443,7 +453,7 @@ def subdivide_data(tX, y):
     data_list = []
     y_list = []
     for i, val in enumerate(feat_values):
-        data_list.append(np.delete(tX[tX[:, feat_ind] == val], feat_ind, axis=1))
+        data_list.append(tX[tX[:, feat_ind] == val])
         y_list.append(y[tX[:, feat_ind] == val])
     
     return data_list, y_list, feat_ind
