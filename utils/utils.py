@@ -136,6 +136,41 @@ def ridge_regression_demo(x, y, degree, ratio, seed):
     # Plot the obtained results
     plot_train_test(rmse_tr, rmse_te, lambdas, degree)
     
+def build_k_indices(y, k_fold, seed=1):
+    """build k indices for k-fold."""
+    num_row = y.shape[0]
+    interval = int(num_row / k_fold)
+    np.random.seed(seed)
+    indices = np.random.permutation(num_row)
+    k_indices = [indices[k * interval: (k + 1) * interval] for k in range(k_fold)]
+    return np.array(k_indices)
+    
+def cross_validation_for_rgr(y, tx, k_fold, seed=1, k, lambda_, initial_w, max_iters, gamma):
+    """return the loss of ridge regression."""
+    rmse_tr = []
+    rmse_te = []
+    k_indices = build_k_indices(y, k_fold, seed)
+    # ***************************************************
+    # get k'th subgroup in test, others in train
+    # ***************************************************
+    for k in range(k_fold):
+
+        te_indice = k_indices[k]
+        tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)]
+        tr_indice = tr_indice.reshape(-1)
+        y_te = y[te_indice]
+        y_tr = y[tr_indice]
+        tx_te = x[te_indice]
+        tx_tr = x[tr_indice]
+    
+        w, loss = reg_logistic_regression(y_tr, tx_tr, lambda_ , initial_w, max_iters, gamma)
+        
+        loss_tr = np.sqrt(2 * calculate_loss(y_tr, x_tr, w))
+        loss_te = np.sqrt(2 * calculate_loss(y_te, x_te, w))
+
+        rmse_tr.append(loss_tr)
+        rmse_te.append(loss_te)
+    return rmse_tr, rmse_te, w
     
 def split_data(x, y, ratio, seed=1):
     """
@@ -173,29 +208,6 @@ def cross_validation(y, x, k_indices, k, lambda_, degree):
     loss_tr = np.sqrt(2 * compute_loss(y_tr, tx_tr, w))
     loss_te = np.sqrt(2 * compute_loss(y_te, tx_te, w))
     return loss_tr, loss_te
-
-def build_k_indices(y, k_fold, seed):
-    """build k indices for k-fold."""
-    num_row = y.shape[0]
-    interval = int(num_row / k_fold)
-    np.random.seed(seed)
-    indices = np.random.permutation(num_row)
-    k_indices = [indices[k * interval: (k + 1) * interval]
-                 for k in range(k_fold)]
-    return np.array(k_indices)
-
-
-def split_train_valid(y, x, k_indices, k):
-    seed = 12
-    te_indices = k_indices[k]
-    tr_indices = np.concatenate((k_indices[:k], k_indices[k+1:]), axis=0).reshape(-1)
-    
-    x_tr = x[tr_indices]
-    y_tr = y[tr_indices]
-    x_te = x[te_indices]
-    y_te = y[te_indices]
-    
-    return x_tr, y_tr, x_te, y_te
 
 
 def sigmoid(t):
