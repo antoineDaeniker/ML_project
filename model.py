@@ -70,11 +70,11 @@ def run_model_split(save_weights=True, retrain=True, internal_test=True, create_
     print(ws_best)
     if save_weights:
         ws_best_array = np.array(ws_best[0], ws_best[1], ws_best[2], ws_best[3])
-        np.savetxt('sgd_model_split.csv', np.asarray(ws_best_array), delimiter=',')
+        #np.savetxt('sgd_model_split.csv', np.asarray(ws_best_array), delimiter=',')
     if create_submission:
         print('Creating submission')
         w_ = w
-        for i in rmv_idx:
+        for rmv_idx in rmv_idx_list:
             w_ = np.insert(w_, i, 0)
         _, X_test, _, ids_test = load_csv_data('data/test.csv')
         y_pred = predict_labels(w_, X_test)

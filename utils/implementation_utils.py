@@ -375,12 +375,44 @@ def logistic_regression_penalized_gradient_descent_demo(y, x):
 
 
 
+
 def find_best_w(ws, losses):
+    """ Find the best w from the list of all w during the train """
     w_best = []
     for loss, w in zip(losses, ws):
         idx = np.argmin(loss)
         w_best.append(w[idx])
     return w_best
+
+"""
+TODO : Test!!!!
+"""
+def split_data_for_test_submit(ids, X_test, y, rmv_feat_indx):
+    #Find the nb of different value in per feature
+    nb_diff_values = []
+    for feat in X_test.T:
+        nb_diff_values.append(len(np.unique(feat)))
+        
+    #Create the different dataset w.r.t those different value (and remove the feature concern)
+    feat_ind = np.argmin(nb_diff_values)
+    feat_values = np.unique(X_test[:, feat_ind])
+    ids_list = []
+    test_list = []
+    y_list = []
+    for i, val in enumerate(feat_values):
+        bool_ = X_test[:, feat_ind] == val
+
+        sub_XData = X_test[bool_]
+        sub_XData = np.delete(sub_XData, rmv_feat_indx, axis=1)
+        #sub_XData,_ = normalize_data(sub_XData)
+        sub_y = y[bool_]
+
+        ids_list.append(ids[bool_])
+        test_list.append(sub_XData)
+        y_list.append(sub_y)
+
+    return test_list, y_list, ids_list
+
 
 
 ############################################
