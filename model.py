@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from implementations import reg_logistic_regression
-from utils.preprocessing_utils import preprocess_train_data, preprocess_train_data_split
+from utils.preprocessing_utils import make_prediction_split_for_submission, preprocess_train_data, preprocess_train_data_split
 from utils.io_utils import *
 from utils.implementation_utils import *
 import time
@@ -30,10 +30,10 @@ def train(X, y, rmv_idx, max_iters=800, gamma=1e-5, batch_size=1, save_weights=F
     return w, loss
 
 
-def run_model_split(save_weights=True, retrain=True, internal_test=True, create_submission=False):
+def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=True):
     y, X, Xt, ids = load_csv_data('data/train.csv')
     print('Data shape: ', y.shape, X.shape)
-    X_list, y_list, rmv_idx_list = preprocess_train_data_split(X, y) 
+    X_list, y_list, rmv_idx_list = preprocess_train_data_split(X, y)
     ws = []
     losses = []
     for i, (y, X, rmv_idx), in enumerate(zip(y_list, X_list, rmv_idx_list)):
@@ -67,18 +67,16 @@ def run_model_split(save_weights=True, retrain=True, internal_test=True, create_
         losses.append(losses_split)
 
     ws_best = find_best_w(ws, losses)
-    print(ws_best)
+    print('Best weights : ',ws_best)
+
     if save_weights:
         ws_best_array = np.array(ws_best[0], ws_best[1], ws_best[2], ws_best[3])
         #np.savetxt('sgd_model_split.csv', np.asarray(ws_best_array), delimiter=',')
     if create_submission:
         print('Creating submission')
-        w_ = w
-        for rmv_idx in rmv_idx_list:
-            w_ = np.insert(w_, i, 0)
-        _, X_test, _, ids_test = load_csv_data('data/test.csv')
-        y_pred = predict_labels(w_, X_test)
-        create_csv_submission(ids_test, y_pred, f'data/submissions/submission_{time.strftime("%Y%m%d-%H%M%S")}.csv')
+        y_te, X_te, _, ids_te = load_csv_data('data/test.csv')
+        new_y_pred = make_prediction_split_for_submission(y_te, X_te, ids_te, rmv_idx_list, ws_best)
+        create_csv_submission(ids_te, new_y_pred, f'data/submissions/submission_split{time.strftime("%Y%m%d-%H%M%S")}.csv')
 
 
 def test(w, X_test, y_test):

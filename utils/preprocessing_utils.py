@@ -1,7 +1,8 @@
 import numpy as np
 import logging
 
-from utils.implementation_utils import delete_irr_features, feature_correlation, normalize_data, subdivide_data
+from utils.implementation_utils import delete_irr_features, feature_correlation, normalize_data, split_data_for_test_submit, subdivide_data
+from utils.io_utils import predict_labels
 
 logger = logging.getLogger(__name__)
 
@@ -57,4 +58,23 @@ def preprocess_train_data_split(X, y):
         rmv_idx_split.append(rmv_idx)
 
     return data_split, y_split, rmv_idx_split
+
+
+def make_prediction_split_for_submission(y_te, X_te, ids_te, rmv_idx_list, ws_best):
+    y_pred_list = []
+    X_test_list, y_test_list, ids_list = split_data_for_test_submit(ids_te, X_te, y_te, rmv_idx_list)
+    for ws, rmv_idx, sub_X_test in zip(ws_best, rmv_idx_list, X_test_list):
+        for idx in rmv_idx:
+            ws = np.insert(ws, idx, 0)
+        #sub_X_test, _ = normalize_data(sub_X_test)
+        sub_X_test = np.concatenate((np.ones(sub_X_test.shape[0])[:, np.newaxis], sub_X_test), axis=1)
+        y_pred = predict_labels(ws, sub_X_test)
+        y_pred_list.append(y_pred)
+    y_pred_conc = np.concatenate((y_pred_list[0], y_pred_list[1], y_pred_list[2] ,y_pred_list[3]), axis=0)[:, np.newaxis]
+    ids_conc = np.concatenate((ids_list[0], ids_list[1], ids_list[2] ,ids_list[3]), axis=0)[:, np.newaxis]
+    ids_y_conc = np.concatenate((ids_conc, y_pred_conc), axis=1)
+    sorted_y_conc = ids_y_conc[ids_y_conc[:, 0].argsort()]
+    new_y_pred = np.squeeze(np.delete(sorted_y_conc, 0, axis=1))
+
+    return new_y_pred
 

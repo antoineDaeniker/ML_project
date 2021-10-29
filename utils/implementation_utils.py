@@ -387,7 +387,7 @@ def find_best_w(ws, losses):
 """
 TODO : Test!!!!
 """
-def split_data_for_test_submit(ids, X_test, y, rmv_feat_indx):
+def split_data_for_test_submit(ids, X_test, y, rmv_feat_list):
     #Find the nb of different value in per feature
     nb_diff_values = []
     for feat in X_test.T:
@@ -399,12 +399,12 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_indx):
     ids_list = []
     test_list = []
     y_list = []
-    for i, val in enumerate(feat_values):
+    for i, (val, rmv_feat_indx) in enumerate(zip(feat_values, rmv_feat_list)):
         bool_ = X_test[:, feat_ind] == val
 
         sub_XData = X_test[bool_]
-        sub_XData = np.delete(sub_XData, rmv_feat_indx, axis=1)
-        #sub_XData,_ = normalize_data(sub_XData)
+        #sub_XData = np.delete(sub_XData, rmv_feat_indx, axis=1)
+        sub_XData,_ = normalize_data(sub_XData)
         sub_y = y[bool_]
 
         ids_list.append(ids[bool_])
