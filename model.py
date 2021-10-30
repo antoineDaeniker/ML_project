@@ -13,14 +13,15 @@ logger = logging.getLogger(__name__)
 
 
 def train(X, y, rmv_idx, max_iters=800, gamma=1e-7, batch_size=1, save_weights=False, add_bias_term=True):
-    w, loss = reg_logistic_regression(
-        y=y,
-        tx=X,
-        lambda_=1e-8,
-        initial_w=np.zeros(X.shape[1]),
-        max_iters=max_iters,
-        gamma=gamma,
-    )
+    w, loss = ridge_regression(y, X, lambda_=1e-8)
+    # w, loss = reg_logistic_regression(
+    #     y=y,
+    #     tx=X,
+    #     lambda_=1e-8,
+    #     initial_w=np.zeros(X.shape[1]),
+    #     max_iters=max_iters,
+    #     gamma=gamma,
+    # )
 
     logger.info(f'Final loss value for trained model: {loss}')
 
@@ -30,7 +31,7 @@ def train(X, y, rmv_idx, max_iters=800, gamma=1e-7, batch_size=1, save_weights=F
     return w, loss
 
 
-def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=True, add_bias_term=True):
+def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=False, add_bias_term=True):
     y, X, Xt, ids = load_csv_data('data/train.csv')
     print('Data shape: ', y.shape, X.shape)
     X_list, y_list, rmv_idx_list = preprocess_train_data_split(X, y)
@@ -44,6 +45,7 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
         w_split = []
         losses_split = []
         for k in range(k_fold):
+            start_time = datetime.now()
             X_train, y_train, X_test, y_test = split_cross_validation(y, X, k_indices, k)
             y_train_dist = np.asarray((np.unique(y_train, return_counts=True))).T
             y_test_dist = np.asarray((np.unique(y_test, return_counts=True))).T
@@ -53,7 +55,6 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
             if not retrain:
                 w = np.loadtxt('sgd_model.csv', delimiter=',')
             else:
-                start_time = datetime.now()
                 w, loss = train(X_train, y_train, rmv_idx)
                 losses_split.append(loss)
                 w_split.append(w)
