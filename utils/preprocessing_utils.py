@@ -52,7 +52,7 @@ def preprocess_train_data_split(X, y, degree, update_label=False):
         rmv_idx = np.unique(rmv_idx)
         print('Removed features indexes : ', rmv_idx)
         data_reduce = np.delete(X, rmv_idx, axis=1)
-        data_poly = build_poly(data_reduce, degree)
+        data_poly = build_poly(data_reduce)
         data_irr_corr_norm,_ = normalize_data(data_poly)
 
         if update_label:

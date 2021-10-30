@@ -101,31 +101,52 @@ def calculate_least_squares(y, tx):
     return w, compute_loss(y, tx, w)
 
 
-def build_poly(x, degree):
+def build_poly(x, degree_start=-3, degree_end=8, include_half=True, include_cross_terms=True):
     """polynomial basis functions for input data x, for j=0 up to j=degree."""
-    poly = np.ones((x.shape[0], 1))
+    x = x.astype(float)
+    poly = np.array(x, copy=True)
+    zero_terms = 0
     for feat in x.T:
-        for deg in range(1, degree+1):
-            poly = np.c_[poly, np.power(feat, deg)]
+        for deg in range(degree_start, degree_end+1):
+            # polynomial terms of degree one area already included
+            # if feature contains 0 values do not raise to a negative exponent
+            if deg != 0 and deg != 1:
+                if deg > 0 or 0 not in feat:
+                    poly = np.c_[poly, np.power(feat, deg)]
+                else:
+                    poly = np.c_[poly, np.zeros(len(feat))]
+                    zero_terms += 1
+        # if feature contains negative values, do not sqrt
+        if include_half and not np.any(feat < 0):
+            poly = np.c_[poly, np.power(feat, 0.5)]
+        else:
+            poly = np.c_[poly, np.zeros(len(feat))]
+            zero_terms += 1
+    if include_cross_terms:
+        for feature_idx1 in range(len(x.T)):
+            for feature_idx2 in range(feature_idx1+1, len(x.T)):
+                poly = np.c_[poly, x.T[feature_idx1] * x.T[feature_idx2]]
+    print(f'Generating polynomial with {poly.shape[1]} terms and {zero_terms} zero terms.')
     return poly
 
 
 def ridge_regression(y, tx, lambda_):
     """implement ridge regression."""
     
-    w = np.linalg.solve(tx.T.dot(tx)  + 2 * len(y) * lambda_ * np.eye(tx.shape[1]), tx.T.dot(y))
+    w = np.linalg.solve(tx.T.dot(tx) + 2 * len(y) * lambda_ * np.eye(tx.shape[1]), tx.T.dot(y))
     return w, compute_loss(y, tx, w)
 
 
 def ridge_regression_demo(x, y, degree, ratio, seed):
     """ridge regression demo."""
+
     # define parameter
     lambdas = np.logspace(-5, 0, 15)
 
     x_tr, y_tr, x_te, y_te = split_data(x, y, ratio, seed=seed)
     
-    poly_data_tr = build_poly(x_tr, degree)
-    poly_data_te = build_poly(x_te, degree)
+    poly_data_tr = build_poly(x_tr)
+    poly_data_te = build_poly(x_te)
     
     rmse_tr = []
     rmse_te = []
@@ -208,7 +229,7 @@ def split_cross_validation(y, x, k_indices, k):
     return x_tr, y_tr, x_te, y_te
 
 
-def cross_validation(y, x, k_indices, k, lambda_, degree):
+def cross_validation(y, x, k_indices, k, lambda_):
     """return the loss of ridge regression."""
     
     te_indices = k_indices[k]
@@ -219,8 +240,8 @@ def cross_validation(y, x, k_indices, k, lambda_, degree):
     x_te = x[te_indices]
     y_te = y[te_indices]
 
-    tx_tr = build_poly(x_tr, degree)
-    tx_te = build_poly(x_te, degree)
+    tx_tr = build_poly(x_tr)
+    tx_te = build_poly(x_te)
 
     w = ridge_regression(y_tr, tx_tr, lambda_)
     
@@ -402,7 +423,7 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list):
 
         sub_XData = X_test[bool_]
         sub_XData = np.delete(sub_XData, rmv_feat_indx, axis=1)
-        sub_XData_poly = build_poly(sub_XData, 8)
+        sub_XData_poly = build_poly(sub_XData)
         sub_XData,_ = normalize_data(sub_XData_poly)
         sub_y = y[bool_]
 
