@@ -384,9 +384,7 @@ def find_best_w(ws, losses):
         w_best.append(w[idx])
     return w_best
 
-"""
-TODO : Test!!!!
-"""
+
 def split_data_for_test_submit(ids, X_test, y, rmv_feat_list):
     #Find the nb of different value in per feature
     nb_diff_values = []
@@ -413,6 +411,16 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list):
         y_list.append(sub_y)
 
     return test_list, y_list, ids_list
+
+
+def data_for_test_submit(X_test, rmv_feat):
+    
+    XData = np.delete(X_test, rmv_feat, axis=1)
+    XData_poly = build_poly(XData, 8)
+    XData_norm,_ = normalize_data(XData_poly)
+    new_X_test = np.concatenate((np.ones(XData_norm.shape[0])[:, np.newaxis], XData_norm), axis=1)
+
+    return new_X_test
 
 
 

@@ -12,7 +12,7 @@ def update_labels(y):
     return y
 
 
-def preprocess_train_data(X, y):
+def preprocess_train_data(X, y, update_labels = False):
     logger.info('Preprocessing data')
 
     _, irr_ind = delete_irr_features(X, 0.5)
@@ -24,14 +24,17 @@ def preprocess_train_data(X, y):
     rmv_idx = np.unique(rmv_idx)
     print(rmv_idx)
     data_reduce = np.delete(X, rmv_idx, axis=1)
-    data_irr_corr_norm,_ = normalize_data(data_reduce)
+    data_poly = build_poly(data_reduce, 8)
+    data_irr_corr_norm,_ = normalize_data(data_poly)
+    data_irr_corr_norm = np.concatenate((np.ones(data_irr_corr_norm.shape[0])[:, np.newaxis], data_irr_corr_norm), axis=1)
 
-    y = update_labels(y)
+    if update_labels:
+        y = update_labels(y)
 
     return data_irr_corr_norm, y, rmv_idx
 
 
-def preprocess_train_data_split(X, y, update_label=False):
+def preprocess_train_data_split(X, y, degree, update_label=False):
     logger.info('Preprocessing data')
     X_list, y_list, feat_ind = subdivide_data(X, y)
     data_split = []
@@ -49,7 +52,7 @@ def preprocess_train_data_split(X, y, update_label=False):
         rmv_idx = np.unique(rmv_idx)
         print('Removed features indexes : ', rmv_idx)
         data_reduce = np.delete(X, rmv_idx, axis=1)
-        data_poly = build_poly(data_reduce, 8)
+        data_poly = build_poly(data_reduce, degree)
         data_irr_corr_norm,_ = normalize_data(data_poly)
 
         if update_label:
