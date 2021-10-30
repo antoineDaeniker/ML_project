@@ -1,7 +1,7 @@
 import numpy as np
 import logging
 
-from utils.implementation_utils import delete_irr_features, feature_correlation, normalize_data, split_data_for_test_submit, subdivide_data
+from utils.implementation_utils import build_poly, delete_irr_features, feature_correlation, normalize_data, split_data_for_test_submit, subdivide_data
 from utils.io_utils import predict_labels
 
 logger = logging.getLogger(__name__)
@@ -47,9 +47,11 @@ def preprocess_train_data_split(X, y):
         rmv_idx = np.insert(rmv_idx, -1, norm_ind)
         rmv_idx = np.insert(rmv_idx, -1, feat_ind)
         rmv_idx = np.unique(rmv_idx)
-        print(rmv_idx)
+        print('Removed features indexes : ', rmv_idx)
         data_reduce = np.delete(X, rmv_idx, axis=1)
-        data_irr_corr_norm,_ = normalize_data(data_reduce)
+        data_poly = build_poly(data_reduce, 8)
+        data_irr_corr_norm,_ = normalize_data(data_poly)
+
 
         y = update_labels(y)
 
@@ -64,8 +66,8 @@ def make_prediction_split_for_submission(y_te, X_te, ids_te, rmv_idx_list, ws_be
     y_pred_list = []
     X_test_list, y_test_list, ids_list = split_data_for_test_submit(ids_te, X_te, y_te, rmv_idx_list)
     for ws, rmv_idx, sub_X_test in zip(ws_best, rmv_idx_list, X_test_list):
-        for idx in rmv_idx:
-            ws = np.insert(ws, idx, 0)
+        #for idx in rmv_idx:
+        #    ws = np.insert(ws, idx, 0)
         #sub_X_test, _ = normalize_data(sub_X_test)
         sub_X_test = np.concatenate((np.ones(sub_X_test.shape[0])[:, np.newaxis], sub_X_test), axis=1)
         y_pred = predict_labels(ws, sub_X_test)

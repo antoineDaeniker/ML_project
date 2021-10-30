@@ -403,8 +403,9 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list):
         bool_ = X_test[:, feat_ind] == val
 
         sub_XData = X_test[bool_]
-        #sub_XData = np.delete(sub_XData, rmv_feat_indx, axis=1)
-        sub_XData,_ = normalize_data(sub_XData)
+        sub_XData = np.delete(sub_XData, rmv_feat_indx, axis=1)
+        sub_XData_poly = build_poly(sub_XData, 8)
+        sub_XData,_ = normalize_data(sub_XData_poly)
         sub_y = y[bool_]
 
         ids_list.append(ids[bool_])

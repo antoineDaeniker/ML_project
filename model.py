@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def train(X, y, rmv_idx, max_iters=800, gamma=1e-5, batch_size=1, save_weights=False, add_bias_term=True):
+def train(X, y, rmv_idx, max_iters=800, gamma=1e-7, batch_size=1, save_weights=False, add_bias_term=True):
     w, loss = reg_logistic_regression(
         y=y,
         tx=X,
@@ -30,14 +30,15 @@ def train(X, y, rmv_idx, max_iters=800, gamma=1e-5, batch_size=1, save_weights=F
     return w, loss
 
 
-def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=True):
+def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=True, add_bias_term=True):
     y, X, Xt, ids = load_csv_data('data/train.csv')
     print('Data shape: ', y.shape, X.shape)
     X_list, y_list, rmv_idx_list = preprocess_train_data_split(X, y)
     ws = []
     losses = []
     for i, (y, X, rmv_idx), in enumerate(zip(y_list, X_list, rmv_idx_list)):
-        X = np.concatenate((np.ones(X.shape[0])[:, np.newaxis], X), axis=1)
+        if add_bias_term:
+            X = np.concatenate((np.ones(X.shape[0])[:, np.newaxis], X), axis=1)
         k_fold = 10
         k_indices = build_k_indices(y, k_fold)
         w_split = []
