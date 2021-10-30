@@ -134,4 +134,7 @@ def run_model(save_weights=True, retrain=True, internal_test=True, create_submis
     NORMALISATION without removed features
     BIAS TERM WITH WEIGHT 1 (after normalising) ##DONE
     SPLITTING DATA                              Still need to do prediction and do one submit
+    
+    TODO final submission with all data
+    TODO polynomial 
 """
