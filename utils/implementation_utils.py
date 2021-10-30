@@ -565,11 +565,6 @@ def data_test_preprocessing(tX_test, y_test, rmv_feat_idx_list, threshold_irr, t
         new_data_test_list.append(norm_data_test_reduce)
         
     return new_data_test_list, y_list_test
-    
-
-def get_predictions(w, X_test):
-    pred = predict_labels(w, X_test)
-    return pred
 
     
     

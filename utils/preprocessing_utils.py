@@ -31,7 +31,7 @@ def preprocess_train_data(X, y):
     return data_irr_corr_norm, y, rmv_idx
 
 
-def preprocess_train_data_split(X, y):
+def preprocess_train_data_split(X, y, update_label=False):
     logger.info('Preprocessing data')
     X_list, y_list, feat_ind = subdivide_data(X, y)
     data_split = []
@@ -52,8 +52,8 @@ def preprocess_train_data_split(X, y):
         data_poly = build_poly(data_reduce)
         data_irr_corr_norm,_ = normalize_data(data_poly)
 
-
-        y = update_labels(y)
+        if update_label:
+            y = update_labels(y)
 
         data_split.append(data_irr_corr_norm)
         y_split.append(y)
