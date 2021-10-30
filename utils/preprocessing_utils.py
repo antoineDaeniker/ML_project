@@ -34,7 +34,7 @@ def preprocess_train_data(X, y, update_labels = False):
     return data_irr_corr_norm, y, rmv_idx
 
 
-def preprocess_train_data_split(X, y, degree, update_label=False):
+def preprocess_train_data_split(X, y, update_label=False):
     logger.info('Preprocessing data')
     X_list, y_list, feat_ind = subdivide_data(X, y)
     data_split = []
