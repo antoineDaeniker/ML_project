@@ -12,7 +12,7 @@ def update_labels(y):
     return y
 
 
-def preprocess_train_data(X, y, update_labels = False):
+def preprocess_train_data(X, y, update_labels = True):
     logger.info('Preprocessing data')
 
     _, irr_ind = delete_irr_features(X, 0.5)
