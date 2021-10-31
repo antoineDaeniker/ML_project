@@ -437,7 +437,7 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list):
 def data_for_test_submit(X_test, rmv_feat):
     
     XData = np.delete(X_test, rmv_feat, axis=1)
-    XData_poly = build_poly(XData, 8)
+    XData_poly = build_poly(XData)
     XData_norm,_ = normalize_data(XData_poly)
     new_X_test = np.concatenate((np.ones(XData_norm.shape[0])[:, np.newaxis], XData_norm), axis=1)
 
