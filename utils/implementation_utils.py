@@ -395,10 +395,16 @@ def subdivide_data(tX, y):
     return data_list, y_list, feat_ind
 
 
-################################################################
-### DELETE FEATURE WITH MORE THAN THRESHOLD OF CORRUPT DATA ####
-################################################################
 def delete_irr_features(data, threshold):
+    """
+    Delete features with high ratio of invalid values (-999)
+
+    data: 2-D numpy array data set
+    threshold: if ratio of invalid value per features is above threshold, delete this feature
+
+    data_reduce: new data set without features with too much invalid values
+    count_999_ind: list of features indexes with too much invalid values
+    """
     #Remove irrelevant feature, for each data set
     count_999 = []
     for feat in data.T:
@@ -409,10 +415,22 @@ def delete_irr_features(data, threshold):
     
     return data_reduce, count_999_ind
 
-################################################################
-#################### PRE-PROCESS THE DATA ######################
-################################################################
+
 def data_train_preprocessing(tX, y, threshold_irr, threshold_corr, show_plot=False):
+    """
+    Compute all process method on data set
+
+    tX: 2-D numpy array data set
+    y: 1-D numpy array labels
+    threshold_irr: threshold for irrelevant features
+    threshold_corr: threshold for corrolated features
+    show_plot: bool, True if we want to see correlations matrices
+
+    return:
+        data_reduce_list: list of processed sub data set
+        y_list: list of labels
+        rmv_feat_idx_list: list of removed indexes for each sub data
+    """
     
     data_list, y_list, feat_ind = subdivide_data(tX, y)
     
@@ -435,16 +453,15 @@ def data_train_preprocessing(tX, y, threshold_irr, threshold_corr, show_plot=Fal
     
     
 def get_accuracy(y_pred, y_gt):
+    """
+    Get the accuracy between predictions and ground truths labels
+
+    y_pred: predictions labels
+    y_gt: ground truth labels
+
+    return:
+        accuracy
+    """
     accuracy = len(y_pred[y_pred == y_gt]) * 100 / y_gt.shape[0]
     return accuracy
-
-
-"""
-    # Save weights
-    np.savetxt('sgd_model.csv', np.asarray(sgd_ws), delimiter=',')
-
-    # Load weights
-    sgd_ws = np.loadtxt('sgd_model.csv', delimiter=',')
-
-"""
 
