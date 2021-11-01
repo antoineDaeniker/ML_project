@@ -14,7 +14,7 @@ Make sure the `data` folder is available in the project and that the right data 
 
 You can change configurations you want in `model.py` file specifically in the `get_run_configs` function.
 
-*NOTE*: In order to abtain our results you can use our final configuration.
+*NOTE*: In order to obtain our final results you can use our final configuration.
 
 ## 4. Running the project
 
@@ -30,24 +30,24 @@ To get the results, a file will be automatically created in  `$Data/submissions`
 
 ## 6. Code's architecture:
 
-# Individual scripts:
+#### Individual scripts:
 
-* `implementations.py` : contains the main methods used
-* `model.py`: - creates and run different possible configurations (different methods, different parameters..)
-            - generate model on train data based on the config input
+*  `implementations.py` : contains the main methods used
+*  `model.py`: - creates and run different possible configurations (different methods, different parameters..)
+            - generates model on train data based on the config input
             - tests model on test data calculating accuracy
 * `run.py`: runs the model
 
-# Folders: 
+#### Folders: 
 
 1. Folder `data file`: contains training and test data
 
 2. Folder `utils file`: general file for functions used in main functions
-            * io_utils.py: loads data, makes predictions based on the test data using the model, and outputs results in a file for submission to Kaggle or AIcrowd
-            * preprossessing_utils.py : functions used for preprocessing 
-            *implementation_utils.py : functions used for implementations and running the model 
+* `io_utils.py`: loads data, makes predictions based on the test data using the model, and outputs results in a file for submission to Kaggle or AIcrowd
+* `preprossessing_utils.py` : functions used for preprocessing 
+* `implementation_utils.py` : functions used for implementations and running the model 
 
 3. Folder `figs` : Contains figures for visualisations 
 
-# Notebooks: 
+##### Notebooks: 
 for testing
