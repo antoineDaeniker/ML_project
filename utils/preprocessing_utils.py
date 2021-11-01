@@ -14,42 +14,41 @@ def update_labels(y):
     y[np.where(y == -1)] = 0
     return y
 
-# TODO DELETE?
 
-# def preprocess_train_data(X, y, update_labels = True):
-#     """
-#     Get feature indexes of irrelevant features (those with to much invalid values), group corrolate features and 
-#     get features indexes of features with 0 standard deviation
+def preprocess_train_data(X, y, update_labels = True):
+    """
+    Get feature indexes of irrelevant features (those with to much invalid values), group corrolate features and 
+    get features indexes of features with 0 standard deviation
 
-#     X: 2-D numpy array with the data sample
-#     y: 1-D numpy array with labels of data set
-#     update_labels: bool, True if we change y labels from {-1, 1} to {0, 1}
+    X: 2-D numpy array with the data sample
+    y: 1-D numpy array with labels of data set
+    update_labels: bool, True if we change y labels from {-1, 1} to {0, 1}
 
-#     return: 
-#         data_irr_corr_norm: the new process data set
-#         y: the updated labels if update_labels was set to true
-#         rmv_idx: array with indexes of feature to remove
-#     """
+    return: 
+        data_irr_corr_norm: the new process data set
+        y: the updated labels if update_labels was set to true
+        rmv_idx: array with indexes of feature to remove
+    """
 
-#     logger.info('Preprocessing data')
+    logger.info('Preprocessing data')
 
-#     _, irr_ind = delete_irr_features(X, 0.5)
-#     _, corr_ind,_ = feature_correlation(X, 0.9)
-#     _, norm_ind = normalize_data(X)
+    _, irr_ind = delete_irr_features(X, 0.5)
+    _, corr_ind,_ = feature_correlation(X, 0.9)
+    _, norm_ind = normalize_data(X)
 
-#     rmv_idx = np.unique(np.concatenate((irr_ind, corr_ind)))
-#     rmv_idx = np.insert(rmv_idx, -1, norm_ind)
-#     rmv_idx = np.unique(rmv_idx)
-#     print(rmv_idx)
-#     data_reduce = np.delete(X, rmv_idx, axis=1)
-#     data_reduce = build_poly(data_reduce)
-#     data_irr_corr_norm,_ = normalize_data(data_reduce)
-#     data_irr_corr_norm = np.concatenate((np.ones(data_irr_corr_norm.shape[0])[:, np.newaxis], data_irr_corr_norm), axis=1)
+    rmv_idx = np.unique(np.concatenate((irr_ind, corr_ind)))
+    rmv_idx = np.insert(rmv_idx, -1, norm_ind)
+    rmv_idx = np.unique(rmv_idx)
+    print(rmv_idx)
+    data_reduce = np.delete(X, rmv_idx, axis=1)
+    data_reduce = build_poly(data_reduce)
+    data_irr_corr_norm,_ = normalize_data(data_reduce)
+    data_irr_corr_norm = np.concatenate((np.ones(data_irr_corr_norm.shape[0])[:, np.newaxis], data_irr_corr_norm), axis=1)
 
-#     if update_labels:
-#         y = update_labels(y)
+    if update_labels:
+        y = update_labels(y)
 
-#     return data_irr_corr_norm, y, rmv_idx
+    return data_irr_corr_norm, y, rmv_idx
 
 
 def preprocess_train_data_split(X, y, update_label=False):
