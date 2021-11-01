@@ -52,7 +52,7 @@ def preprocess_train_data(X, y, update_labels = True):
     return data_irr_corr_norm, y, rmv_idx
 
 
-def preprocess_train_data_split(X, y, update_label=False, training_config=None):
+def preprocess_train_data_split(X, y, update_label=True, training_config=None):
     """
     Similar method as preprocess_train_data but do it for all sub data set
 
@@ -91,14 +91,13 @@ def preprocess_train_data_split(X, y, update_label=False, training_config=None):
             include_cross_terms=training_config['include_cross_terms'],
         )
 
-        data_reduce = build_poly(data_reduce, **poly_config)
-
         data_irr_corr_norm,_ = normalize_data(data_reduce)
+        data_reduce = build_poly(data_irr_corr_norm, **poly_config)
 
         if update_label:
             y = update_labels(y)
 
-        data_split.append(data_irr_corr_norm)
+        data_split.append(data_reduce)
         y_split.append(y)
         rmv_idx_split.append(rmv_idx)
 
