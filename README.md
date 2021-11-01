@@ -43,9 +43,9 @@ To get the results, a file will be automatically created in  `$Data/submissions`
 1. Folder `data file`: contains training and test data
 
 2. Folder `utils file`: general file for functions used in main functions
-* io_utils.py: loads data, makes predictions based on the test data using the model, and outputs results in a file for submission to Kaggle or AIcrowd
-* preprossessing_utils.py : functions used for preprocessing 
-* implementation_utils.py : functions used for implementations and running the model 
+* `io_utils.py`: loads data, makes predictions based on the test data using the model, and outputs results in a file for submission to Kaggle or AIcrowd
+* `preprossessing_utils.py` : functions used for preprocessing 
+* `implementation_utils.py` : functions used for implementations and running the model 
 
 3. Folder `figs` : Contains figures for visualisations 
 
