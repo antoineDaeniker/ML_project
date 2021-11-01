@@ -1,0 +1,1 @@
+[[{"pattern": "asdfghjkl", "message": "This is not possible", "output": [1, 2]}, {"pattern": "anotherpatterntomatch", "message": "The parameter provided application is invalid"}, {"pattern": "athirdpatterntomatch", "message": "Expected value for debugging"}]]
