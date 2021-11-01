@@ -291,7 +291,7 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list, training_config=No
         sub_y = y[bool_]
 
         ids_list.append(ids[bool_])
-        test_list.append(sub_XData_poly)
+        test_list.append(sub_XData_norm)
         y_list.append(sub_y)
 
     return test_list, y_list, ids_list
