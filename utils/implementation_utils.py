@@ -4,11 +4,7 @@ from .io_utils import *
 
 """ TODO split into multiple util files"""
 
-def penalized_logistic_regression(y, tx, w, lambda_):
-    """return the loss, gradient"""
-    loss = calculate_loss(y, tx, w) + lambda_ * np.linalg.norm(w)**2
-    grad = calculate_gradient(y, tx, w) + 2 * lambda_ * w
-    return loss, grad
+
 
 def compute_loss(y, tx, w):
     """Calculate the loss.
@@ -94,13 +90,6 @@ def stochastic_gradient_descent(y, tx, initial_w, batch_size, max_iters, gamma):
     return losses, ws[len(ws) - 1]
 
 
-def calculate_least_squares(y, tx):
-    """calculate the least squares solution."""
-
-    w = np.linalg.solve (tx.T.dot(tx), tx.T.dot(y))
-    return w, compute_loss(y, tx, w)
-
-
 def build_poly(x, degree_start=-3, degree_end=8, include_half=True, include_cross_terms=True):
     """
         x: 2-D numpy array of data samples
@@ -141,38 +130,34 @@ def build_poly(x, degree_start=-3, degree_end=8, include_half=True, include_cros
     return poly
 
 
-def ridge_regression(y, tx, lambda_):
-    """implement ridge regression."""
+#TODO DELETE
+
+# def ridge_regression_demo(x, y, degree, ratio, seed):
+#     """ridge regression demo."""
+
+#     # define parameter
+#     lambdas = np.logspace(-5, 0, 15)
+
+#     x_tr, y_tr, x_te, y_te = split_data(x, y, ratio, seed=seed)
     
-    w = np.linalg.solve(tx.T.dot(tx) + 2 * len(y) * lambda_ * np.eye(tx.shape[1]), tx.T.dot(y))
-    return w, compute_loss(y, tx, w)
-
-
-def ridge_regression_demo(x, y, degree, ratio, seed):
-    """ridge regression demo."""
-
-    # define parameter
-    lambdas = np.logspace(-5, 0, 15)
-
-    x_tr, y_tr, x_te, y_te = split_data(x, y, ratio, seed=seed)
+#     poly_data_tr = build_poly(x_tr)
+#     poly_data_te = build_poly(x_te)
     
-    poly_data_tr = build_poly(x_tr)
-    poly_data_te = build_poly(x_te)
-    
-    rmse_tr = []
-    rmse_te = []
-    for ind, lambda_ in enumerate(lambdas):
+#     rmse_tr = []
+#     rmse_te = []
+#     for ind, lambda_ in enumerate(lambdas):
         
-        w, l = ridge_regression(y_tr, poly_data_tr, lambda_)
+#         w, l = ridge_regression(y_tr, poly_data_tr, lambda_)
         
-        rmse_tr.append(np.sqrt(2 * compute_loss(y_tr, poly_data_tr, w)))
-        rmse_te.append(np.sqrt(2 * compute_loss(y_te, poly_data_te, w)))
-        print("proportion={p}, degree={d}, lambda={l:.3f}, Training RMSE={tr:.3f}, Testing RMSE={te:.3f}".format(
-               p=ratio, d=degree, l=lambda_, tr=rmse_tr[ind], te=rmse_te[ind]))
+#         rmse_tr.append(np.sqrt(2 * compute_loss(y_tr, poly_data_tr, w)))
+#         rmse_te.append(np.sqrt(2 * compute_loss(y_te, poly_data_te, w)))
+#         print("proportion={p}, degree={d}, lambda={l:.3f}, Training RMSE={tr:.3f}, Testing RMSE={te:.3f}".format(
+#                p=ratio, d=degree, l=lambda_, tr=rmse_tr[ind], te=rmse_te[ind]))
         
-    # Plot the obtained results
-    plot_train_test(rmse_tr, rmse_te, lambdas, degree)
+#     # Plot the obtained results
+#     plot_train_test(rmse_tr, rmse_te, lambdas, degree)
     
+
 def build_k_indices(y, k_fold, seed=1):
     """build k indices for k-fold."""
     num_row = y.shape[0]
@@ -182,48 +167,22 @@ def build_k_indices(y, k_fold, seed=1):
     k_indices = [indices[k * interval: (k + 1) * interval] for k in range(k_fold)]
     return np.array(k_indices)
     
-def cross_validation_for_rgr(y, tx, k_fold, k, lambda_, initial_w, max_iters, gamma, seed=1):
-    """return the loss of ridge regression."""
-    rmse_tr = []
-    rmse_te = []
-    k_indices = build_k_indices(y, k_fold, seed)
-    # ***************************************************
-    # get k'th subgroup in test, others in train
-    # ***************************************************
-    for k in range(k_fold):
-
-        te_indice = k_indices[k]
-        tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)]
-        tr_indice = tr_indice.reshape(-1)
-        y_te = y[te_indice]
-        y_tr = y[tr_indice]
-        tx_te = tx[te_indice]
-        tx_tr = tx[tr_indice]
+#TODO delete   
+# def split_data(x, y, ratio, seed=1):
+#     """
+#     split the dataset based on the split ratio. If ratio is 0.8 
+#     you will have 80% of your data set dedicated to training 
+#     and the rest dedicated to testing
+#     """
+#     # set seed
+#     np.random.seed(seed)
     
-        w, loss = reg_logistic_regression(y_tr, tx_tr, lambda_ , initial_w, max_iters, gamma)
-        
-        loss_tr = np.sqrt(2 * calculate_loss(y_tr, x_tr, w))
-        loss_te = np.sqrt(2 * calculate_loss(y_te, x_te, w))
-
-        rmse_tr.append(loss_tr)
-        rmse_te.append(loss_te)
-    return rmse_tr, rmse_te, w
+#     indexes = np.random.permutation(len(y))
+#     index_split = int(np.floor(ratio * len(y)))
+#     index_tr = indexes[:index_split]
+#     index_te = indexes[index_split:]
     
-def split_data(x, y, ratio, seed=1):
-    """
-    split the dataset based on the split ratio. If ratio is 0.8 
-    you will have 80% of your data set dedicated to training 
-    and the rest dedicated to testing
-    """
-    # set seed
-    np.random.seed(seed)
-    
-    indexes = np.random.permutation(len(y))
-    index_split = int(np.floor(ratio * len(y)))
-    index_tr = indexes[:index_split]
-    index_te = indexes[index_split:]
-    
-    return x[index_tr], y[index_tr], x[index_te], y[index_te]
+#     return x[index_tr], y[index_tr], x[index_te], y[index_te]
 
 
 def split_cross_validation(y, x, k_indices, k, training_config=None):
@@ -251,25 +210,25 @@ def split_cross_validation(y, x, k_indices, k, training_config=None):
 
     return x_tr, y_tr, x_te, y_te
 
+#TODO DELETE
+# def cross_validation(y, x, k_indices, k, lambda_, training_config=None):
 
-def cross_validation(y, x, k_indices, k, lambda_, training_config=None):
-
-    te_indices = k_indices[k]
-    tr_indices = np.concatenate((k_indices[:k], k_indices[k+1:]), axis=0).reshape(-1)
+#     te_indices = k_indices[k]
+#     tr_indices = np.concatenate((k_indices[:k], k_indices[k+1:]), axis=0).reshape(-1)
     
-    x_tr = x[tr_indices]
-    y_tr = y[tr_indices]
-    x_te = x[te_indices]
-    y_te = y[te_indices]
+#     x_tr = x[tr_indices]
+#     y_tr = y[tr_indices]
+#     x_te = x[te_indices]
+#     y_te = y[te_indices]
 
-    tx_tr = x_tr
-    tx_te = x_te
+#     tx_tr = x_tr
+#     tx_te = x_te
 
-    w = ridge_regression(y_tr, tx_tr, lambda_)
+#     w = ridge_regression(y_tr, tx_tr, lambda_)
     
-    loss_tr = np.sqrt(2 * compute_loss(y_tr, tx_tr, w))
-    loss_te = np.sqrt(2 * compute_loss(y_te, tx_te, w))
-    return loss_tr, loss_te
+#     loss_tr = np.sqrt(2 * compute_loss(y_tr, tx_tr, w))
+#     loss_te = np.sqrt(2 * compute_loss(y_te, tx_te, w))
+#     return loss_tr, loss_te
 
 
 def sigmoid(t):
@@ -289,44 +248,46 @@ def calculate_gradient(y, tx, w):
     pred = sigmoid(tx.dot(w))
     return tx.T.dot(pred - y)
 
+#TODO DELETE
+# def learning_by_gradient_descent(y, tx, w, gamma):
+#     """
+#     Do one step of gradient descent using logistic regression.
+#     Return the loss and the updated w.
+#     """
+#     loss = calculate_loss(y, tx, w)
+#     grad = calculate_gradient(y, tx, w)
+#     w = w - gamma * grad
+#     return loss, w
 
-def learning_by_gradient_descent(y, tx, w, gamma):
-    """
-    Do one step of gradient descent using logistic regression.
-    Return the loss and the updated w.
-    """
-    loss = calculate_loss(y, tx, w)
-    grad = calculate_gradient(y, tx, w)
-    w = w - gamma * grad
-    return loss, w
+
+# def logistic_regression_gradient_descent_demo(y, x):
+#     # init parameters
+#     max_iter = 10000
+#     threshold = 1e-8
+#     gamma = 0.01
+#     losses = []
+
+#     # build tx
+#     tx = np.c_[np.ones((y.shape[0], 1)), x]
+#     w = np.zeros((tx.shape[1], 1))
+
+#     # start the logistic regression
+#     for iter in range(max_iter):
+#         # get loss and update w.
+#         loss, w = learning_by_gradient_descent(y, tx, w, gamma)
+#         # log info
+#         if iter % 100 == 0:
+#             print("Current iteration={i}, loss={l}".format(i=iter, l=loss))
+#         # converge criterion
+#         losses.append(loss)
+#         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+#             break
+#     # visualization
+#     visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_gradient_descent", True)
+#     print("loss={l}".format(l=calculate_loss(y, tx, w)))
 
 
-def logistic_regression_gradient_descent_demo(y, x):
-    # init parameters
-    max_iter = 10000
-    threshold = 1e-8
-    gamma = 0.01
-    losses = []
-
-    # build tx
-    tx = np.c_[np.ones((y.shape[0], 1)), x]
-    w = np.zeros((tx.shape[1], 1))
-
-    # start the logistic regression
-    for iter in range(max_iter):
-        # get loss and update w.
-        loss, w = learning_by_gradient_descent(y, tx, w, gamma)
-        # log info
-        if iter % 100 == 0:
-            print("Current iteration={i}, loss={l}".format(i=iter, l=loss))
-        # converge criterion
-        losses.append(loss)
-        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
-            break
-    # visualization
-    visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_gradient_descent", True)
-    print("loss={l}".format(l=calculate_loss(y, tx, w)))
-
+#TODO VIEW THIS METHOD
     
 def calculate_hessian(y, tx, w):
     """return the Hessian of the loss function."""
@@ -349,72 +310,77 @@ def learning_by_newton_method(y, tx, w, gamma):
     w = np.linalg.solve(hess, hess.dot(w) - gamma * grad)
     return loss, w
 
+#TODO DELETE
+# def logistic_regression_newton_method_demo(y, x):
+#     # init parameters
+#     max_iter = 100
+#     threshold = 1e-8
+#     lambda_ = 0.1
+#     gamma = 1.
+#     losses = []
 
-def logistic_regression_newton_method_demo(y, x):
-    # init parameters
-    max_iter = 100
-    threshold = 1e-8
-    lambda_ = 0.1
-    gamma = 1.
-    losses = []
+#     # build tx
+#     tx = np.c_[np.ones((y.shape[0], 1)), x]
+#     w = np.zeros((tx.shape[1], 1))
 
-    # build tx
-    tx = np.c_[np.ones((y.shape[0], 1)), x]
-    w = np.zeros((tx.shape[1], 1))
+#     # start the logistic regression
+#     for iter in range(max_iter):
+#         # get loss and update w.
+#         loss, w = learning_by_newton_method(y, tx, w, gamma)
+#         # log info
+#         if iter % 1 == 0:
+#             print("Current iteration={i}, the loss={l}".format(i=iter, l=loss))
+#         # converge criterion
+#         losses.append(loss)
+#         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+#             break
+#     # visualization
+#     visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_newton_method",True)
+#     print("loss={l}".format(l=calculate_loss(y, tx, w)))
 
-    # start the logistic regression
-    for iter in range(max_iter):
-        # get loss and update w.
-        loss, w = learning_by_newton_method(y, tx, w, gamma)
-        # log info
-        if iter % 1 == 0:
-            print("Current iteration={i}, the loss={l}".format(i=iter, l=loss))
-        # converge criterion
-        losses.append(loss)
-        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
-            break
-    # visualization
-    visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_newton_method",True)
-    print("loss={l}".format(l=calculate_loss(y, tx, w)))
+def penalized_logistic_regression(y, tx, w, lambda_):
+    """return the loss, gradient"""
+    loss = calculate_loss(y, tx, w) + lambda_ * np.linalg.norm(w)**2
+    grad = calculate_gradient(y, tx, w) + 2 * lambda_ * w
+    return loss, grad
 
-
-
-def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
-    """
-    Do one step of gradient descent, using the penalized logistic regression.
-    Return the loss and updated w.
-    """
-    loss, grad = penalized_logistic_regression(y, tx, w, lambda_)
-    w = w - gamma * grad
-    return loss, w
+#TODO DELETE
+# def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
+#     """
+#     Do one step of gradient descent, using the penalized logistic regression.
+#     Return the loss and updated w.
+#     """
+#     loss, grad = penalized_logistic_regression(y, tx, w, lambda_)
+#     w = w - gamma * grad
+#     return loss, w
 
 
-def logistic_regression_penalized_gradient_descent_demo(y, x):
-    # init parameters
-    max_iter = 10000
-    gamma = 0.01
-    lambda_ = 0.1
-    threshold = 1e-8
-    losses = []
+# def logistic_regression_penalized_gradient_descent_demo(y, x):
+#     # init parameters
+#     max_iter = 10000
+#     gamma = 0.01
+#     lambda_ = 0.1
+#     threshold = 1e-8
+#     losses = []
 
-    # build tx
-    tx = np.c_[np.ones((y.shape[0], 1)), x]
-    w = np.zeros((tx.shape[1], 1))
+#     # build tx
+#     tx = np.c_[np.ones((y.shape[0], 1)), x]
+#     w = np.zeros((tx.shape[1], 1))
 
-    # start the logistic regression
-    for iter in range(max_iter):
-        # get loss and update w.
-        loss, w = learning_by_penalized_gradient(y, tx, w, gamma, lambda_)
-        # log info
-        if iter % 100 == 0:
-            print("Current iteration={i}, loss={l}".format(i=iter, l=loss))
-        # converge criterion
-        losses.append(loss)
-        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
-            break
-    # visualization
-    visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_penalized_gradient_descent",True)
-    print("loss={l}".format(l=calculate_loss(y, tx, w)))
+#     # start the logistic regression
+#     for iter in range(max_iter):
+#         # get loss and update w.
+#         loss, w = learning_by_penalized_gradient(y, tx, w, gamma, lambda_)
+#         # log info
+#         if iter % 100 == 0:
+#             print("Current iteration={i}, loss={l}".format(i=iter, l=loss))
+#         # converge criterion
+#         losses.append(loss)
+#         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+#             break
+#     # visualization
+#     visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_penalized_gradient_descent",True)
+#     print("loss={l}".format(l=calculate_loss(y, tx, w)))
 
 
 
@@ -455,15 +421,15 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list):
 
     return test_list, y_list, ids_list
 
+#TODO DELETE
+# def data_for_test_submit(X_test, rmv_feat):
 
-def data_for_test_submit(X_test, rmv_feat):
+#     XData = np.delete(X_test, rmv_feat, axis=1)
+#     XData_poly = build_poly(XData)
+#     XData_norm,_ = normalize_data(XData_poly)
+#     new_X_test = np.concatenate((np.ones(XData_norm.shape[0])[:, np.newaxis], XData_norm), axis=1)
 
-    XData = np.delete(X_test, rmv_feat, axis=1)
-    XData_poly = build_poly(XData)
-    XData_norm,_ = normalize_data(XData_poly)
-    new_X_test = np.concatenate((np.ones(XData_norm.shape[0])[:, np.newaxis], XData_norm), axis=1)
-
-    return new_X_test
+#     return new_X_test
 
 
 
