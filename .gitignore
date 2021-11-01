@@ -36,6 +36,10 @@ __pypackages__/
 .idea
 .DS_store
 **/*.ipynb_checkpoints/
-data/
 
 *model.txt
+
+data/train.csv
+data/train.csv.zip
+data/test.csv
+data/test.csv.zip
