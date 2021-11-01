@@ -8,13 +8,14 @@ from utils.preprocessing_utils import make_prediction_split_for_submission, prep
 from utils.io_utils import *
 from utils.implementation_utils import *
 import time
+import json
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def create_run_config(method=reg_logistic_regression, max_iters=800, lambda_=1e-8, start_degree=-3, end_degree=8,
+def create_run_config(method=reg_logistic_regression, max_iters=2000, lambda_=1e-8, start_degree=-3, end_degree=8,
                       include_half=True, include_cross_terms=True):
     return dict(method=method, max_iters=max_iters, lambda_=lambda_, start_degree=start_degree, end_degree=end_degree,
                 include_half=include_half, include_cross_terms=include_cross_terms)
@@ -26,17 +27,25 @@ def get_run_configs(k=10):
         polynomial end degree, include half, include cross terms
     """
     configs = [
-        create_run_config(),
-        create_run_config(lambda_=1e-7),
-        create_run_config(lambda_=1e-6),
-        create_run_config(lambda_=1e-5),
-        create_run_config(lambda_=1e-4),
-        create_run_config(max_iters=2000, lambda_=1e-6),
-        create_run_config(method=ridge_regression, lambda_=1e-7),
-        create_run_config(method=ridge_regression, lambda_=1e-6),
-        create_run_config(method=ridge_regression, lambda_=1e-5),
-        create_run_config(method=ridge_regression, lambda_=1e-4),
-    ][:k]
+                  create_run_config(lambda_=1e-7, start_degree=-2, end_degree=2),
+                  create_run_config(lambda_=1e-6, start_degree=-2, end_degree=2),
+                  create_run_config(lambda_=1e-5, start_degree=-2, end_degree=2),
+        
+                  create_run_config(lambda_=1e-7, start_degree=-3, end_degree=3),
+                  create_run_config(lambda_=1e-6, start_degree=-3, end_degree=3),
+                  create_run_config(lambda_=1e-5, start_degree=-3, end_degree=3),
+        
+                  create_run_config(lambda_=1e-7, start_degree=-4, end_degree=4),
+                  create_run_config(lambda_=1e-6, start_degree=-4, end_degree=4),
+                  create_run_config(lambda_=1e-5, start_degree=-4, end_degree=4),
+        
+                  create_run_config(lambda_=1e-6, start_degree=-5, end_degree=5),
+                  # create_run_config(max_iters=2000, lambda_=1e-6),
+                  # create_run_config(method=ridge_regression, lambda_=1e-7),
+                  # create_run_config(method=ridge_regression, lambda_=1e-6),
+                  # create_run_config(method=ridge_regression, lambda_=1e-5),
+                  # create_run_config(method=ridge_regression, lambda_=1e-4),
+              ][:k]
 
     assert len(configs) == k
 
@@ -68,14 +77,16 @@ def train(X, y, rmv_idx, method=reg_logistic_regression, max_iters=800, gamma=1e
     return w, loss
 
 
-def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=True, add_bias_term=True,
+def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=False, add_bias_term=True,
                     apply_cross_validation=True):
     y, X, Xt, ids = load_csv_data('data/train.csv')
     print('Data shape: ', y.shape, X.shape)
     X_list, y_list, rmv_idx_list = preprocess_train_data_split(X, y)  # doesn't do any train / test splitting
     ws = []
     losses = []
+    lambda_poly_plots = []
     for i, (y, X, rmv_idx), in enumerate(zip(y_list, X_list, rmv_idx_list)):
+        lambda_poly_plot = []
         if add_bias_term:
             X = np.concatenate((np.ones(X.shape[0])[:, np.newaxis], X), axis=1)
         w_split = []
@@ -87,8 +98,10 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
             k_fold = 1
         for k in range(k_fold):
             start_time = datetime.now()
+            current_config = get_run_configs(k=k_fold)[k]
+            print(f'Training with config: {current_config}')
             if apply_cross_validation:
-                X_train, y_train, X_test, y_test = split_cross_validation(y, X, k_indices, k)
+                X_train, y_train, X_test, y_test = split_cross_validation(y, X, k_indices, k, training_config=current_config)
                 y_train_dist = np.asarray((np.unique(y_train, return_counts=True))).T
                 y_test_dist = np.asarray((np.unique(y_test, return_counts=True))).T
                 # with np.printoptions(precision=0, suppress=True):
@@ -100,8 +113,6 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
                 w = np.loadtxt('sgd_model.csv', delimiter=',')
             else:
                 if apply_cross_validation:
-                    current_config = get_run_configs(k=k_fold)[k]
-                    print(f'Training with config: {current_config}')
                     w, loss = train(X_train, y_train, rmv_idx, **current_config)
                 else:
                     w, loss = train(X_train, y_train, rmv_idx)
@@ -113,12 +124,21 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
 
             if internal_test and apply_cross_validation:
                 print(f'Test for datasplit : {i} and k {k}')
-                test(w, X_test, y_test)
+                accuracy = test(w, X_test, y_test)
+                current_config['method'] = current_config['method'].__name__
+                lambda_poly_plot.append((current_config, accuracy))
         ws.append(w_split)
         losses.append(losses_split)
+        lambda_poly_plots.append(lambda_poly_plot)
 
     ws_best = find_best_w(ws, losses)
     print('Best weights : ', ws_best)
+
+    try:
+        with open(f'data/lambda_poly_plots_data{time.strftime("%Y%m%d-%H%M%S")}.txt', 'w') as f_out:
+            json.dump(lambda_poly_plots, f_out)
+    except Exception as e:
+        print('Write error: ', e)
 
     if save_weights:
         ws_best_array = np.array(ws_best[0], ws_best[1], ws_best[2], ws_best[3])
@@ -136,6 +156,7 @@ def test(w, X_test, y_test):
     y_test[np.where(y_test <= 0)] = -1
     accuracy = get_accuracy(y_pred, y_test)
     print(f'Model accuracy: {accuracy}')
+    return accuracy
 
 
 def run_model(save_weights=True, retrain=True, internal_test=True, create_submission=False, custom_split=True):
