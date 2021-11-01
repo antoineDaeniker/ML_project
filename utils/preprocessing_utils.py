@@ -60,7 +60,7 @@ def preprocess_train_data_split(X, y, update_label=True, training_config=None):
         if update_label:
             y = update_labels(y)
 
-        data_split.append(data_reduce)
+        data_split.append(data_irr_corr_norm)
         y_split.append(y)
         rmv_idx_split.append(rmv_idx)
 
