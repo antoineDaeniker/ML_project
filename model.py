@@ -2,7 +2,7 @@
 from collections import defaultdict
 from datetime import datetime
 
-from implementations import least_squares, least_squares_SGD, reg_logistic_regression
+from implementations import least_squares, least_squares_SGD, reg_logistic_regression, ridge_regression
 from utils.preprocessing_utils import make_prediction_split_for_submission, preprocess_train_data, \
     preprocess_train_data_split
 from utils.io_utils import *
@@ -38,8 +38,8 @@ def get_run_configs(k=10):
         polynomial end degree, include half, include cross terms
     """
     configs = [
-                  create_run_config(method=ridge_regression),
-                  create_run_config(method=least_squares),
+                  create_run_config(method=least_squares, start_degree=1, end_degree=1, include_half=False, include_cross_terms=False),
+                  create_run_config(method=ridge_regression, max_iters=800),
                   create_run_config(method=least_squares_SGD),
                   create_run_config(lambda_=1e-7, start_degree=-2, end_degree=2),
                   create_run_config(lambda_=1e-6, start_degree=-2, end_degree=2),
@@ -94,6 +94,11 @@ def train(X, y, rmv_idx, method=reg_logistic_regression, max_iters=800, gamma=1e
             tx=X,
             lambda_=lambda_
         )
+    elif method == least_squares:
+        w, loss = least_squares(
+            y=y, 
+            tx=X
+        )
     elif method == reg_logistic_regression:
         w, loss = reg_logistic_regression(
             y=y,
@@ -146,7 +151,7 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
             k_indices = build_k_indices(y, k_fold)
         else:
             k_fold = 1
-        for k in range(k_fold):
+        for k in range(1):
             start_time = datetime.now()
             current_config = get_run_configs(k=k_fold)[0]
             print(f'Training with config: {current_config}')
@@ -196,7 +201,7 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
     if create_submission:
         print('Creating submission')
         y_te, X_te, _, ids_te = load_csv_data('data/test.csv')
-        new_y_pred = make_prediction_split_for_submission(y_te, X_te, ids_te, rmv_idx_list, ws_best)
+        new_y_pred = make_prediction_split_for_submission(y_te, X_te, ids_te, rmv_idx_list, ws_best, training_config=current_config)
         create_csv_submission(ids_te, new_y_pred,
                               f'data/submissions/submission_split{time.strftime("%Y%m%d-%H%M%S")}.csv')
 

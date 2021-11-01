@@ -1,3 +1,4 @@
+from PIL.Image import NONE
 import numpy as np
 import logging
 
@@ -82,6 +83,7 @@ def preprocess_train_data_split(X, y, update_label=False):
         rmv_idx = np.unique(rmv_idx)
         print('Removed features indexes : ', rmv_idx)
         data_reduce = np.delete(X, rmv_idx, axis=1)
+        #data_reduce = build_poly(data_reduce)
         data_irr_corr_norm,_ = normalize_data(data_reduce)
 
         if update_label:
@@ -94,7 +96,7 @@ def preprocess_train_data_split(X, y, update_label=False):
     return data_split, y_split, rmv_idx_split
 
 
-def make_prediction_split_for_submission(y_te, X_te, ids_te, rmv_idx_list, ws_best):
+def make_prediction_split_for_submission(y_te, X_te, ids_te, rmv_idx_list, ws_best, training_config=None):
     """
     Reconstruc the y labels in the order of the indexes sample of the test set
 
@@ -108,7 +110,7 @@ def make_prediction_split_for_submission(y_te, X_te, ids_te, rmv_idx_list, ws_be
         new_y_pred: 1-D numpy array of predictions
     """
     y_pred_list = []
-    X_test_list, y_test_list, ids_list = split_data_for_test_submit(ids_te, X_te, y_te, rmv_idx_list)
+    X_test_list, y_test_list, ids_list = split_data_for_test_submit(ids_te, X_te, y_te, rmv_idx_list, training_config=training_config)
     for ws, rmv_idx, sub_X_test in zip(ws_best, rmv_idx_list, X_test_list):
         sub_X_test = np.concatenate((np.ones(sub_X_test.shape[0])[:, np.newaxis], sub_X_test), axis=1)
         y_pred = predict_labels(ws, sub_X_test)

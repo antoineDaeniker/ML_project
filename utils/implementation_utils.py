@@ -2,14 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from .io_utils import *
 
-""" TODO split into multiple util files"""
-
-
 
 def compute_loss(y, tx, w):
     """Calculate the loss.
+        Can calculate the loss using mse or mae
+    
+    y: 1-D numpy array of labels
+    tx: 2-D numpy array of data sample
+    w: parameters of training procedure
 
-    You can calculate the loss using mse or mae.
+    return:
+        loss function
     """
     
     return 1/2 * np.mean((y - tx @ w)**2)  #MSE
@@ -17,30 +20,16 @@ def compute_loss(y, tx, w):
 
 
 def compute_gradient(y, tx, w):
-    """Compute the gradient."""
+    """Compute the gradient
+    
+    y: 1-D numpy array of labels
+    tx: 2-D numpy array of data sample
+    w: parameters of training procedure
+
+    return:
+        gradient
+    """
     return -tx.T @ (y - tx @ w) / len(y)
-
-
-def gradient_descent(y, tx, initial_w, max_iters, gamma):
-    """Gradient descent algorithm."""
-    # Define parameters to store w and loss
-    ws = [initial_w]
-    losses = []
-    w = initial_w
-    for n_iter in range(max_iters):
-        
-        grad = compute_gradient(y, tx, w)
-        loss = compute_loss(y, tx, w)
-        
-        w = w - gamma * grad
-        
-        # store w and loss
-        ws.append(w)
-        losses.append(loss)
-        print("Gradient Descent({bi}/{ti}): loss={l}".format(
-              bi=n_iter, ti=max_iters - 1, l=loss), end='\r')
-
-    return losses, ws[len(ws) - 1]
 
 
 def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
@@ -67,27 +56,6 @@ def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
         end_index = min((batch_num + 1) * batch_size, data_size)
         if start_index != end_index:
             yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
-
-
-def stochastic_gradient_descent(y, tx, initial_w, batch_size, max_iters, gamma):
-    """Stochastic gradient descent algorithm."""
-    # Define parameters to store w and loss
-    ws = [initial_w]
-    losses = []
-    w = initial_w
-    for n_iter in range(max_iters):
-        for minibatch_y, minibatch_tx in batch_iter(y, tx, batch_size):
-        
-            grad = compute_gradient(minibatch_y, minibatch_tx, w)
-            loss = compute_loss(minibatch_y, minibatch_tx, w)
-
-            w = w - gamma * grad
-
-            # store w and loss
-            ws.append(w)
-            losses.append(loss)
-        print("Gradient Descent({bi}/{ti}): loss={l}, normgrad={normgrad}".format(bi=n_iter, ti=max_iters - 1, l=loss, normgrad=np.linalg.norm(grad)), end='\r')
-    return losses, ws[len(ws) - 1]
 
 
 def build_poly(x, degree_start=-3, degree_end=8, include_half=True, include_cross_terms=True):
@@ -130,36 +98,16 @@ def build_poly(x, degree_start=-3, degree_end=8, include_half=True, include_cros
     return poly
 
 
-#TODO DELETE
-
-# def ridge_regression_demo(x, y, degree, ratio, seed):
-#     """ridge regression demo."""
-
-#     # define parameter
-#     lambdas = np.logspace(-5, 0, 15)
-
-#     x_tr, y_tr, x_te, y_te = split_data(x, y, ratio, seed=seed)
-    
-#     poly_data_tr = build_poly(x_tr)
-#     poly_data_te = build_poly(x_te)
-    
-#     rmse_tr = []
-#     rmse_te = []
-#     for ind, lambda_ in enumerate(lambdas):
-        
-#         w, l = ridge_regression(y_tr, poly_data_tr, lambda_)
-        
-#         rmse_tr.append(np.sqrt(2 * compute_loss(y_tr, poly_data_tr, w)))
-#         rmse_te.append(np.sqrt(2 * compute_loss(y_te, poly_data_te, w)))
-#         print("proportion={p}, degree={d}, lambda={l:.3f}, Training RMSE={tr:.3f}, Testing RMSE={te:.3f}".format(
-#                p=ratio, d=degree, l=lambda_, tr=rmse_tr[ind], te=rmse_te[ind]))
-        
-#     # Plot the obtained results
-#     plot_train_test(rmse_tr, rmse_te, lambdas, degree)
-    
-
 def build_k_indices(y, k_fold, seed=1):
-    """build k indices for k-fold."""
+    """build k indices for k-fold
+
+    y: 1-D numpy array of labels
+    k_fold: number of chunks
+    seed: for randomize
+
+    return:
+        numpy array of k_indices
+    """
     num_row = y.shape[0]
     interval = int(num_row / k_fold)
     np.random.seed(seed)
@@ -167,26 +115,22 @@ def build_k_indices(y, k_fold, seed=1):
     k_indices = [indices[k * interval: (k + 1) * interval] for k in range(k_fold)]
     return np.array(k_indices)
     
-#TODO delete   
-# def split_data(x, y, ratio, seed=1):
-#     """
-#     split the dataset based on the split ratio. If ratio is 0.8 
-#     you will have 80% of your data set dedicated to training 
-#     and the rest dedicated to testing
-#     """
-#     # set seed
-#     np.random.seed(seed)
-    
-#     indexes = np.random.permutation(len(y))
-#     index_split = int(np.floor(ratio * len(y)))
-#     index_tr = indexes[:index_split]
-#     index_te = indexes[index_split:]
-    
-#     return x[index_tr], y[index_tr], x[index_te], y[index_te]
-
 
 def split_cross_validation(y, x, k_indices, k, training_config=None):
-    """ Cross validation function. """
+    """ Cross validation function
+
+    y: 1-D numpy array of labels
+    tx: 2-D numpy array of data sample
+    k_indices: contain chunks that contain sample indexes of data
+    k: correspond to the chunck use for the validation set, other will be use for the train set
+    training_config: trainging configuration
+
+    return:
+        x_tr: training set data
+        y_tr: training set labels
+        x_te: validation set data
+        x_te: validation set labels
+    """
     if training_config is None:
         raise ValueError('Please supply training config to cross validation function!')
 
@@ -210,81 +154,42 @@ def split_cross_validation(y, x, k_indices, k, training_config=None):
 
     return x_tr, y_tr, x_te, y_te
 
-#TODO DELETE
-# def cross_validation(y, x, k_indices, k, lambda_, training_config=None):
-
-#     te_indices = k_indices[k]
-#     tr_indices = np.concatenate((k_indices[:k], k_indices[k+1:]), axis=0).reshape(-1)
-    
-#     x_tr = x[tr_indices]
-#     y_tr = y[tr_indices]
-#     x_te = x[te_indices]
-#     y_te = y[te_indices]
-
-#     tx_tr = x_tr
-#     tx_te = x_te
-
-#     w = ridge_regression(y_tr, tx_tr, lambda_)
-    
-#     loss_tr = np.sqrt(2 * compute_loss(y_tr, tx_tr, w))
-#     loss_te = np.sqrt(2 * compute_loss(y_te, tx_te, w))
-#     return loss_tr, loss_te
-
 
 def sigmoid(t):
-    """apply the sigmoid function on t."""
+    """apply the sigmoid function on t
+    
+    t: prediction
+    """
     return 1 / (1 + np.exp(-t))
 
 
 def calculate_loss(y, tx, w):
-    """compute the loss: negative log likelihood."""
+    """compute the loss: negative log likelihood
+    
+    y: 1-D numpy array of labels
+    tx: 2-D numpy array of data sample
+    w: parameters of training procedure
+
+    return:
+        negative log likelihood
+    """
     pred = sigmoid(tx.dot(w))
     loss_i = y.T.dot(np.log(pred)) + (1 - y).T.dot(np.log(1 - pred))
     return -np.sum(loss_i)
 
 
 def calculate_gradient(y, tx, w):
-    """compute the gradient of loss."""
+    """compute the gradient of loss
+    
+    y: 1-D numpy array of labels
+    tx: 2-D numpy array of data sample
+    w: parameters of training procedure
+
+    return:
+        gradient of likelihood function
+    """
     pred = sigmoid(tx.dot(w))
     return tx.T.dot(pred - y)
-
-#TODO DELETE
-# def learning_by_gradient_descent(y, tx, w, gamma):
-#     """
-#     Do one step of gradient descent using logistic regression.
-#     Return the loss and the updated w.
-#     """
-#     loss = calculate_loss(y, tx, w)
-#     grad = calculate_gradient(y, tx, w)
-#     w = w - gamma * grad
-#     return loss, w
-
-
-# def logistic_regression_gradient_descent_demo(y, x):
-#     # init parameters
-#     max_iter = 10000
-#     threshold = 1e-8
-#     gamma = 0.01
-#     losses = []
-
-#     # build tx
-#     tx = np.c_[np.ones((y.shape[0], 1)), x]
-#     w = np.zeros((tx.shape[1], 1))
-
-#     # start the logistic regression
-#     for iter in range(max_iter):
-#         # get loss and update w.
-#         loss, w = learning_by_gradient_descent(y, tx, w, gamma)
-#         # log info
-#         if iter % 100 == 0:
-#             print("Current iteration={i}, loss={l}".format(i=iter, l=loss))
-#         # converge criterion
-#         losses.append(loss)
-#         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
-#             break
-#     # visualization
-#     visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_gradient_descent", True)
-#     print("loss={l}".format(l=calculate_loss(y, tx, w)))
 
 
 #TODO VIEW THIS METHOD
@@ -310,79 +215,12 @@ def learning_by_newton_method(y, tx, w, gamma):
     w = np.linalg.solve(hess, hess.dot(w) - gamma * grad)
     return loss, w
 
-#TODO DELETE
-# def logistic_regression_newton_method_demo(y, x):
-#     # init parameters
-#     max_iter = 100
-#     threshold = 1e-8
-#     lambda_ = 0.1
-#     gamma = 1.
-#     losses = []
-
-#     # build tx
-#     tx = np.c_[np.ones((y.shape[0], 1)), x]
-#     w = np.zeros((tx.shape[1], 1))
-
-#     # start the logistic regression
-#     for iter in range(max_iter):
-#         # get loss and update w.
-#         loss, w = learning_by_newton_method(y, tx, w, gamma)
-#         # log info
-#         if iter % 1 == 0:
-#             print("Current iteration={i}, the loss={l}".format(i=iter, l=loss))
-#         # converge criterion
-#         losses.append(loss)
-#         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
-#             break
-#     # visualization
-#     visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_newton_method",True)
-#     print("loss={l}".format(l=calculate_loss(y, tx, w)))
 
 def penalized_logistic_regression(y, tx, w, lambda_):
     """return the loss, gradient"""
     loss = calculate_loss(y, tx, w) + lambda_ * np.linalg.norm(w)**2
     grad = calculate_gradient(y, tx, w) + 2 * lambda_ * w
     return loss, grad
-
-#TODO DELETE
-# def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
-#     """
-#     Do one step of gradient descent, using the penalized logistic regression.
-#     Return the loss and updated w.
-#     """
-#     loss, grad = penalized_logistic_regression(y, tx, w, lambda_)
-#     w = w - gamma * grad
-#     return loss, w
-
-
-# def logistic_regression_penalized_gradient_descent_demo(y, x):
-#     # init parameters
-#     max_iter = 10000
-#     gamma = 0.01
-#     lambda_ = 0.1
-#     threshold = 1e-8
-#     losses = []
-
-#     # build tx
-#     tx = np.c_[np.ones((y.shape[0], 1)), x]
-#     w = np.zeros((tx.shape[1], 1))
-
-#     # start the logistic regression
-#     for iter in range(max_iter):
-#         # get loss and update w.
-#         loss, w = learning_by_penalized_gradient(y, tx, w, gamma, lambda_)
-#         # log info
-#         if iter % 100 == 0:
-#             print("Current iteration={i}, loss={l}".format(i=iter, l=loss))
-#         # converge criterion
-#         losses.append(loss)
-#         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
-#             break
-#     # visualization
-#     visualization(y, x, mean_x, std_x, w, "classification_by_logistic_regression_penalized_gradient_descent",True)
-#     print("loss={l}".format(l=calculate_loss(y, tx, w)))
-
-
 
 
 def find_best_w(ws, losses):
@@ -394,7 +232,7 @@ def find_best_w(ws, losses):
     return w_best
 
 
-def split_data_for_test_submit(ids, X_test, y, rmv_feat_list):
+def split_data_for_test_submit(ids, X_test, y, rmv_feat_list, training_config=None):
     #Find the nb of different value in per feature
     nb_diff_values = []
     for feat in X_test.T:
@@ -411,26 +249,21 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list):
 
         sub_XData = X_test[bool_]
         sub_XData = np.delete(sub_XData, rmv_feat_indx, axis=1)
-        sub_XData_poly = build_poly(sub_XData)
-        sub_XData,_ = normalize_data(sub_XData_poly)
+        poly_config = dict(
+            degree_start=training_config['start_degree'],
+            degree_end=training_config['end_degree'],
+            include_half=training_config['include_half'],
+            include_cross_terms=training_config['include_cross_terms'],
+        )
+        sub_XData_norm,_ = normalize_data(sub_XData)
+        sub_XData_poly = build_poly(sub_XData_norm, **poly_config)
         sub_y = y[bool_]
 
         ids_list.append(ids[bool_])
-        test_list.append(sub_XData)
+        test_list.append(sub_XData_norm)
         y_list.append(sub_y)
 
     return test_list, y_list, ids_list
-
-#TODO DELETE
-# def data_for_test_submit(X_test, rmv_feat):
-
-#     XData = np.delete(X_test, rmv_feat, axis=1)
-#     XData_poly = build_poly(XData)
-#     XData_norm,_ = normalize_data(XData_poly)
-#     new_X_test = np.concatenate((np.ones(XData_norm.shape[0])[:, np.newaxis], XData_norm), axis=1)
-
-#     return new_X_test
-
 
 
 ############################################
@@ -546,22 +379,6 @@ def data_train_preprocessing(tX, y, threshold_irr, threshold_corr, show_plot=Fal
         rmv_feat_idx_list.append(np.unique(rmv_feat_idx))
         
     return data_reduce_list, y_list, rmv_feat_idx_list
-
-
-def data_test_preprocessing(tX_test, y_test, rmv_feat_idx_list, threshold_irr, threshold_corr, show_plot=False):
-    
-    data_list_test, y_list_test, feat_ind = subdivide_data(tX_test, y_test)
-    
-    new_data_test_list = []
-    for rmv_feat_idx, data_test in zip(rmv_feat_idx_list, data_list_test):
-        data_test_reduce = np.delete(data_test, rmv_feat_idx, axis=1)
-        norm_data_test_reduce, _ = normalize_data(data_test_reduce)
-        
-        print(norm_data_test_reduce.shape)
-        new_data_test_list.append(norm_data_test_reduce)
-        
-    return new_data_test_list, y_list_test
-
     
     
 def get_accuracy(y_pred, y_gt):
