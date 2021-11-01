@@ -125,6 +125,7 @@ def test(w, X_test, y_test):
     w: 1-D numpy array of parameter result from the training procedure
     X_test: 2-D numpy array of test sample from the validation set
     y_test: 1-D numpy array of labels from the validation set
+    returns: accuracy of the predictions
     """
 
     y_pred = predict_labels(w, X_test)
@@ -136,7 +137,7 @@ def test(w, X_test, y_test):
 def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=True, add_bias_term=True,
                     apply_cross_validation=True):
     """
-    Model using spliting data set
+    Model using split data set
 
     save_weights: bool, True if we want to save the w paremeter, False if we don't want them to be save
     retrain: bool, True if we want to generate new w for the model, False if we reuse previously computed w
@@ -147,8 +148,9 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
     """
 
     y, X, Xt, ids = load_csv_data('data/train.csv')
+    training_config = create_run_config(method=reg_logistic_regression, lambda_=1e-8, start_degree=-8, end_degree=8, max_iters=800)
     print('Data shape: ', y.shape, X.shape)
-    X_list, y_list, rmv_idx_list = preprocess_train_data_split(X, y)  # doesn't do any train / test splitting
+    X_list, y_list, rmv_idx_list = preprocess_train_data_split(X, y, training_config=training_config)  # doesn't do any train / test splitting
     ws = []
     losses = []
     lambda_poly_plots = []
@@ -165,10 +167,10 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
             k_fold = 1
         for k in range(1):
             start_time = datetime.now()
-            current_config = get_run_configs(k=k_fold)[0]
+            current_config = get_run_configs(k=k_fold)[0] if apply_cross_validation else training_config
             print(f'Training with config: {current_config}')
             if apply_cross_validation:
-                X_train, y_train, X_test, y_test = split_cross_validation(y, X, k_indices, k, training_config=current_config)
+                X_train, y_train, X_test, y_test = split_cross_validation(y, X, k_indices, k, training_config=None)
                 y_train_dist = np.asarray((np.unique(y_train, return_counts=True))).T
                 y_test_dist = np.asarray((np.unique(y_test, return_counts=True))).T
                 # with np.printoptions(precision=0, suppress=True):
@@ -182,7 +184,7 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
                 if apply_cross_validation:
                     w, loss = train(X_train, y_train, rmv_idx, **current_config)
                 else:
-                    w, loss = train(X_train, y_train, rmv_idx)
+                    w, loss = train(X_train, y_train, rmv_idx, **training_config)
                 losses_split.append(loss)
                 w_split.append(w)
                 end_time = datetime.now()
@@ -213,7 +215,7 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
     if create_submission:
         print('Creating submission')
         y_te, X_te, _, ids_te = load_csv_data('data/test.csv')
-        new_y_pred = make_prediction_split_for_submission(y_te, X_te, ids_te, rmv_idx_list, ws_best, training_config=current_config)
+        new_y_pred = make_prediction_split_for_submission(y_te, X_te, ids_te, rmv_idx_list, ws_best, training_config=training_config)
         create_csv_submission(ids_te, new_y_pred,
                               f'data/submissions/submission_split{time.strftime("%Y%m%d-%H%M%S")}.csv')
 

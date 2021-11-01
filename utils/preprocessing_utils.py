@@ -52,7 +52,7 @@ def preprocess_train_data(X, y, update_labels = True):
     return data_irr_corr_norm, y, rmv_idx
 
 
-def preprocess_train_data_split(X, y, update_label=False):
+def preprocess_train_data_split(X, y, update_label=False, training_config=None):
     """
     Similar method as preprocess_train_data but do it for all sub data set
 
@@ -83,7 +83,16 @@ def preprocess_train_data_split(X, y, update_label=False):
         rmv_idx = np.unique(rmv_idx)
         print('Removed features indexes : ', rmv_idx)
         data_reduce = np.delete(X, rmv_idx, axis=1)
-        #data_reduce = build_poly(data_reduce)
+
+        poly_config = dict(
+            degree_start=training_config['start_degree'],
+            degree_end=training_config['end_degree'],
+            include_half=training_config['include_half'],
+            include_cross_terms=training_config['include_cross_terms'],
+        )
+
+        data_reduce = build_poly(data_reduce, **poly_config)
+
         data_irr_corr_norm,_ = normalize_data(data_reduce)
 
         if update_label:

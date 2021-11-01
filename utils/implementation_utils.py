@@ -217,14 +217,31 @@ def learning_by_newton_method(y, tx, w, gamma):
 
 
 def penalized_logistic_regression(y, tx, w, lambda_):
-    """return the loss, gradient"""
+    """return the loss, gradient of likelihood function
+    
+    y: 1-D numpy array of labels
+    tx: 2-D numpy array of data sample
+    w: parameters of training procedure
+    lambda_: regularize term
+
+    return:
+        loss: loss of function of likelihood function
+        grad: gradient of function of likelihood function
+    """
     loss = calculate_loss(y, tx, w) + lambda_ * np.linalg.norm(w)**2
     grad = calculate_gradient(y, tx, w) + 2 * lambda_ * w
     return loss, grad
 
 
 def find_best_w(ws, losses):
-    """ Find the best w from the list of all w during the train """
+    """ Find the best w from the list of all w during the train 
+    
+    ws: list (4, k_fold, #sample)list of w for each sub data and each chunk of the cross validation
+    losses: losses for each w in the list
+
+    return:
+        w_best: best parameters for each sub data
+    """
     w_best = []
     for loss, w in zip(losses, ws):
         idx = np.argmin(loss)
@@ -233,6 +250,20 @@ def find_best_w(ws, losses):
 
 
 def split_data_for_test_submit(ids, X_test, y, rmv_feat_list, training_config=None):
+    """
+    Split the data test in the same way we split the train data
+
+    ids: indexes of sample of test set
+    X_test: test set samples
+    y: labels of test set
+    rmv_feat_list: list of indexes of removed features of the traing set
+    training_config: training configuration
+
+    return:
+        test_list: list of split data test
+        y_list: list of test labels
+        ids_list: list of test samples indexes
+    """
     #Find the nb of different value in per feature
     nb_diff_values = []
     for feat in X_test.T:
@@ -256,20 +287,26 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list, training_config=No
             include_cross_terms=training_config['include_cross_terms'],
         )
         sub_XData_norm,_ = normalize_data(sub_XData)
-        sub_XData_poly = build_poly(sub_XData_norm, **poly_config)
+        sub_XData_norm = build_poly(sub_XData_norm, **poly_config)
         sub_y = y[bool_]
 
         ids_list.append(ids[bool_])
-        test_list.append(sub_XData_norm)
+        test_list.append(sub_XData_poly)
         y_list.append(sub_y)
 
     return test_list, y_list, ids_list
 
 
-############################################
-########### NORMALIZE THE DATA #############
-############################################
 def normalize_data(tX):
+    """
+    Normalize the data for each features
+
+    tX: the data set
+
+    return: 
+        data_norm: normalized data
+        std_0_feat_ind: potential indexes where the std of feature were 0
+    """
     temp = tX.copy()
     temp[temp == -999] = 0
     mean_features = np.mean(temp, axis=0)
@@ -287,10 +324,19 @@ def normalize_data(tX):
     return np.array(data_norm), np.array(std_0_feat_ind)
 
 
-############################################
-###### FEATURES CORRELATION SELECTION ######
-############################################
 def feature_correlation(tX, threshold, show_plot=False):
+    """
+    Compute features correlation pairs
+
+    tX: data set
+    threshold: if the correlation between two features is greater than treshold, we group them to keep only one of them
+    show_plot: bool, True if we want to see correlations matrices
+
+    return:
+        data_reduce: data with grouped feature that were too corrolated
+        corr_ind_to_throw: indexes of features we throw since we didn't need them (too corrolated with another one and we keep the other one)
+        corr_ind_to_keep: indexes of features we kept and throw features they were corrolated
+    """
     corr_mat = np.ma.corrcoef(tX, rowvar=False)
     #corr_mat[corr_mat == np.nan] = 0
     
@@ -321,10 +367,17 @@ def feature_correlation(tX, threshold, show_plot=False):
     return data_reduce, corr_ind_to_throw, np.array(corr_ind_to_keep)
 
 
-###############################################################
-###### DIVIDE DATA W.R.T FEATURE WITH LOW VARIATION DATA ######
-###############################################################
 def subdivide_data(tX, y):
+    """
+    Subdivide the data in different data set according to value in feature that took fiew different value 
+                                                        (like PRI_jet_num which takes only 4 different value)
+
+    tX: data set
+    y: labels of data set
+
+    return:
+        data_list, y_list, feat_ind
+    """
     #Find the nb of different value in per feature
     nb_diff_values = []
     for feat in tX.T:
@@ -342,10 +395,16 @@ def subdivide_data(tX, y):
     return data_list, y_list, feat_ind
 
 
-################################################################
-### DELETE FEATURE WITH MORE THAN THRESHOLD OF CORRUPT DATA ####
-################################################################
 def delete_irr_features(data, threshold):
+    """
+    Delete features with high ratio of invalid values (-999)
+
+    data: 2-D numpy array data set
+    threshold: if ratio of invalid value per features is above threshold, delete this feature
+
+    data_reduce: new data set without features with too much invalid values
+    count_999_ind: list of features indexes with too much invalid values
+    """
     #Remove irrelevant feature, for each data set
     count_999 = []
     for feat in data.T:
@@ -356,10 +415,22 @@ def delete_irr_features(data, threshold):
     
     return data_reduce, count_999_ind
 
-################################################################
-#################### PRE-PROCESS THE DATA ######################
-################################################################
+
 def data_train_preprocessing(tX, y, threshold_irr, threshold_corr, show_plot=False):
+    """
+    Compute all process method on data set
+
+    tX: 2-D numpy array data set
+    y: 1-D numpy array labels
+    threshold_irr: threshold for irrelevant features
+    threshold_corr: threshold for corrolated features
+    show_plot: bool, True if we want to see correlations matrices
+
+    return:
+        data_reduce_list: list of processed sub data set
+        y_list: list of labels
+        rmv_feat_idx_list: list of removed indexes for each sub data
+    """
     
     data_list, y_list, feat_ind = subdivide_data(tX, y)
     
@@ -382,16 +453,15 @@ def data_train_preprocessing(tX, y, threshold_irr, threshold_corr, show_plot=Fal
     
     
 def get_accuracy(y_pred, y_gt):
+    """
+    Get the accuracy between predictions and ground truths labels
+
+    y_pred: predictions labels
+    y_gt: ground truth labels
+
+    return:
+        accuracy
+    """
     accuracy = len(y_pred[y_pred == y_gt]) * 100 / y_gt.shape[0]
     return accuracy
-
-
-"""
-    # Save weights
-    np.savetxt('sgd_model.csv', np.asarray(sgd_ws), delimiter=',')
-
-    # Load weights
-    sgd_ws = np.loadtxt('sgd_model.csv', delimiter=',')
-
-"""
 
