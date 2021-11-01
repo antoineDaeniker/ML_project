@@ -102,7 +102,17 @@ def calculate_least_squares(y, tx):
 
 
 def build_poly(x, degree_start=-3, degree_end=8, include_half=True, include_cross_terms=True):
-    """polynomial basis functions for input data x, for j=0 up to j=degree."""
+    """
+        x: 2-D numpy array of data samples
+        degree_start: the minimum polynomial degree in the feature equation
+        degree_end: the maximum polynomial degree in the feature equation
+        include_half: boolean specifies whether to include square rooted feature terms in polynomial
+        include_cross_terms: boolean specifies whether to include bivariate feature terms in polynomial (e.g. X1X2, X1X3)
+
+        returns: 2-D numpy array of data samples with modified features added
+    """
+
+    print(f'Building polynomial with {degree_start}, {degree_end}, {include_half}, {include_cross_terms}.')
     x = x.astype(float)
     poly = np.array(x, copy=True)
     zero_terms = 0
@@ -121,6 +131,7 @@ def build_poly(x, degree_start=-3, degree_end=8, include_half=True, include_cros
             poly = np.c_[poly, np.power(feat, 0.5)]
         else:
             poly = np.c_[poly, np.zeros(len(feat))]
+            # pad the final polynomial with 0 terms to keep the number of terms the same across training and testing
             zero_terms += 1
     if include_cross_terms:
         for feature_idx1 in range(len(x.T)):
@@ -215,9 +226,11 @@ def split_data(x, y, ratio, seed=1):
     return x[index_tr], y[index_tr], x[index_te], y[index_te]
 
 
-def split_cross_validation(y, x, k_indices, k):
-    """return the loss of ridge regression."""
-    
+def split_cross_validation(y, x, k_indices, k, training_config=None):
+    """ Cross validation function. """
+    if training_config is None:
+        raise ValueError('Please supply training config to cross validation function!')
+
     te_indices = k_indices[k]
     tr_indices = np.concatenate((k_indices[:k], k_indices[k+1:]), axis=0).reshape(-1)
     
@@ -225,13 +238,22 @@ def split_cross_validation(y, x, k_indices, k):
     y_tr = y[tr_indices]
     x_te = x[te_indices]
     y_te = y[te_indices]
+
+    poly_config = dict(
+        degree_start=training_config['start_degree'],
+        degree_end=training_config['end_degree'],
+        include_half=training_config['include_half'],
+        include_cross_terms=training_config['include_cross_terms'],
+    )
+
+    x_tr = build_poly(x_tr, **poly_config)
+    x_te = build_poly(x_te, **poly_config)
 
     return x_tr, y_tr, x_te, y_te
 
 
-def cross_validation(y, x, k_indices, k, lambda_):
-    """return the loss of ridge regression."""
-    
+def cross_validation(y, x, k_indices, k, lambda_, training_config=None):
+
     te_indices = k_indices[k]
     tr_indices = np.concatenate((k_indices[:k], k_indices[k+1:]), axis=0).reshape(-1)
     
@@ -240,8 +262,8 @@ def cross_validation(y, x, k_indices, k, lambda_):
     x_te = x[te_indices]
     y_te = y[te_indices]
 
-    tx_tr = build_poly(x_tr)
-    tx_te = build_poly(x_te)
+    tx_tr = x_tr
+    tx_te = x_te
 
     w = ridge_regression(y_tr, tx_tr, lambda_)
     
@@ -435,7 +457,7 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list):
 
 
 def data_for_test_submit(X_test, rmv_feat):
-    
+
     XData = np.delete(X_test, rmv_feat, axis=1)
     XData_poly = build_poly(XData)
     XData_norm,_ = normalize_data(XData_poly)
@@ -459,7 +481,7 @@ def normalize_data(tX):
     data_reduce = np.delete(tX, std_0_feat_ind, axis=1)
     data_norm = np.zeros(tX.shape)
     for i, f in enumerate(tX.T):
-        if std_features[i] != 0 :
+        if std_features[i] != 0:
             f[f == -999] = mean_features[i]
             data_norm[:, i] = (f - mean_features[i]) / std_features[i]
         
