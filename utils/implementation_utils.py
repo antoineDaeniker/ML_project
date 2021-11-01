@@ -217,14 +217,31 @@ def learning_by_newton_method(y, tx, w, gamma):
 
 
 def penalized_logistic_regression(y, tx, w, lambda_):
-    """return the loss, gradient"""
+    """return the loss, gradient of likelihood function
+    
+    y: 1-D numpy array of labels
+    tx: 2-D numpy array of data sample
+    w: parameters of training procedure
+    lambda_: regularize term
+
+    return:
+        loss: loss of function of likelihood function
+        grad: gradient of function of likelihood function
+    """
     loss = calculate_loss(y, tx, w) + lambda_ * np.linalg.norm(w)**2
     grad = calculate_gradient(y, tx, w) + 2 * lambda_ * w
     return loss, grad
 
 
 def find_best_w(ws, losses):
-    """ Find the best w from the list of all w during the train """
+    """ Find the best w from the list of all w during the train 
+    
+    ws: list (4, k_fold, #sample)list of w for each sub data and each chunk of the cross validation
+    losses: losses for each w in the list
+
+    return:
+        w_best: best parameters for each sub data
+    """
     w_best = []
     for loss, w in zip(losses, ws):
         idx = np.argmin(loss)
@@ -233,6 +250,20 @@ def find_best_w(ws, losses):
 
 
 def split_data_for_test_submit(ids, X_test, y, rmv_feat_list, training_config=None):
+    """
+    Split the data test in the same way we split the train data
+
+    ids: indexes of sample of test set
+    X_test: test set samples
+    y: labels of test set
+    rmv_feat_list: list of indexes of removed features of the traing set
+    training_config: training configuration
+
+    return:
+        test_list: list of split data test
+        y_list: list of test labels
+        ids_list: list of test samples indexes
+    """
     #Find the nb of different value in per feature
     nb_diff_values = []
     for feat in X_test.T:
@@ -260,16 +291,22 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list, training_config=No
         sub_y = y[bool_]
 
         ids_list.append(ids[bool_])
-        test_list.append(sub_XData_norm)
+        test_list.append(sub_XData_poly)
         y_list.append(sub_y)
 
     return test_list, y_list, ids_list
 
 
-############################################
-########### NORMALIZE THE DATA #############
-############################################
 def normalize_data(tX):
+    """
+    Normalize the data for each features
+
+    tX: the data set
+
+    return: 
+        data_norm: normalized data
+        std_0_feat_ind: potential indexes where the std of feature were 0
+    """
     temp = tX.copy()
     temp[temp == -999] = 0
     mean_features = np.mean(temp, axis=0)
@@ -287,10 +324,19 @@ def normalize_data(tX):
     return np.array(data_norm), np.array(std_0_feat_ind)
 
 
-############################################
-###### FEATURES CORRELATION SELECTION ######
-############################################
 def feature_correlation(tX, threshold, show_plot=False):
+    """
+    Compute features correlation pairs
+
+    tX: data set
+    threshold: if the correlation between two features is greater than treshold, we group them to keep only one of them
+    show_plot: bool, True if we want to see correlations matrices
+
+    return:
+        data_reduce: data with grouped feature that were too corrolated
+        corr_ind_to_throw: indexes of features we throw since we didn't need them (too corrolated with another one and we keep the other one)
+        corr_ind_to_keep: indexes of features we kept and throw features they were corrolated
+    """
     corr_mat = np.ma.corrcoef(tX, rowvar=False)
     #corr_mat[corr_mat == np.nan] = 0
     
@@ -321,10 +367,17 @@ def feature_correlation(tX, threshold, show_plot=False):
     return data_reduce, corr_ind_to_throw, np.array(corr_ind_to_keep)
 
 
-###############################################################
-###### DIVIDE DATA W.R.T FEATURE WITH LOW VARIATION DATA ######
-###############################################################
 def subdivide_data(tX, y):
+    """
+    Subdivide the data in different data set according to value in feature that took fiew different value 
+                                                        (like PRI_jet_num which takes only 4 different value)
+
+    tX: data set
+    y: labels of data set
+
+    return:
+        data_list, y_list, feat_ind
+    """
     #Find the nb of different value in per feature
     nb_diff_values = []
     for feat in tX.T:
