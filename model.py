@@ -2,7 +2,7 @@
 from collections import defaultdict
 from datetime import datetime
 
-from implementations import reg_logistic_regression
+from implementations import least_squares, least_squares_SGD, reg_logistic_regression
 from utils.preprocessing_utils import make_prediction_split_for_submission, preprocess_train_data, \
     preprocess_train_data_split
 from utils.io_utils import *
@@ -17,6 +17,17 @@ logger = logging.getLogger(__name__)
 
 def create_run_config(method=reg_logistic_regression, max_iters=2000, lambda_=1e-8, start_degree=-3, end_degree=8,
                       include_half=True, include_cross_terms=True):
+    """
+    methode: the method to be use for the model
+    max_iters: the number of iteration to do to train the model
+    lambda_: regularize term
+    start_degree: the starting degree for polynomial expension feature
+    end_degree: the ending degree for polynomial expension feature
+    include_half: boolean specifies whether to include square rooted feature terms in polynomial
+    include_cross_terms: boolean specifies whether to include bivariate feature terms in polynomial (e.g. X1X2, X1X3)
+
+    return: summerize of all parameters we use for the model
+    """
     return dict(method=method, max_iters=max_iters, lambda_=lambda_, start_degree=start_degree, end_degree=end_degree,
                 include_half=include_half, include_cross_terms=include_cross_terms)
 
@@ -27,6 +38,9 @@ def get_run_configs(k=10):
         polynomial end degree, include half, include cross terms
     """
     configs = [
+                  create_run_config(method=ridge_regression),
+                  create_run_config(method=least_squares),
+                  create_run_config(method=least_squares_SGD),
                   create_run_config(lambda_=1e-7, start_degree=-2, end_degree=2),
                   create_run_config(lambda_=1e-6, start_degree=-2, end_degree=2),
                   create_run_config(lambda_=1e-5, start_degree=-2, end_degree=2),
@@ -36,10 +50,10 @@ def get_run_configs(k=10):
                   create_run_config(lambda_=1e-5, start_degree=-3, end_degree=3),
         
                   create_run_config(lambda_=1e-7, start_degree=-4, end_degree=4),
-                  create_run_config(lambda_=1e-6, start_degree=-4, end_degree=4),
-                  create_run_config(lambda_=1e-5, start_degree=-4, end_degree=4),
+                  #create_run_config(lambda_=1e-6, start_degree=-4, end_degree=4),
+                  #create_run_config(lambda_=1e-5, start_degree=-4, end_degree=4),
         
-                  create_run_config(lambda_=1e-6, start_degree=-5, end_degree=5),
+                  #create_run_config(lambda_=1e-6, start_degree=-5, end_degree=5),
                   # create_run_config(max_iters=2000, lambda_=1e-6),
                   # create_run_config(method=ridge_regression, lambda_=1e-7),
                   # create_run_config(method=ridge_regression, lambda_=1e-6),
@@ -54,13 +68,38 @@ def get_run_configs(k=10):
 
 def train(X, y, rmv_idx, method=reg_logistic_regression, max_iters=800, gamma=1e-7, lambda_=1e-8, batch_size=1,
           start_degree=-3, end_degree=8, include_half=True, include_cross_terms=True):
+    """
+    Training procedure
 
-    if method == reg_logistic_regression:
+    X: 2-D numpy array of data samples
+    y: 1-D numpy array of labels
+    methode: the method to be use for the model
+    max_iters: int, the number of iteration to do to train the model
+    gamma: float, step use gradient descent
+    lambda_: float, regularize term
+    batch_size: int, the number of sample we take at each iter for stochastic gradient
+    start_degree: int, the starting degree for polynomial expension feature
+    end_degree: int, the ending degree for polynomial expension feature
+    include_half: bool, specifies whether to include square rooted feature terms in polynomial
+    include_cross_terms: bool, specifies whether to include bivariate feature terms in polynomial (e.g. X1X2, X1X3)
+
+    return: w: 1-D numpy array, parameters output of the model to compute predictions
+            loss: float, loss compute using the w parameter
+    """
+
+    initial_w = np.zeros(X.shape[1])
+    if method == ridge_regression:
+        w, loss = ridge_regression(
+            y=y,
+            tx=X,
+            lambda_=lambda_
+        )
+    elif method == reg_logistic_regression:
         w, loss = reg_logistic_regression(
             y=y,
             tx=X,
             lambda_=lambda_,
-            initial_w=np.zeros(X.shape[1]),
+            initial_w=initial_w,
             max_iters=max_iters,
             gamma=gamma,
         )
@@ -77,8 +116,19 @@ def train(X, y, rmv_idx, method=reg_logistic_regression, max_iters=800, gamma=1e
     return w, loss
 
 
-def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=False, add_bias_term=True,
+def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=True, add_bias_term=True,
                     apply_cross_validation=True):
+    """
+    Model using spliting data set
+
+    save_weights: bool, True if we want to save the w paremeter, False if we don't want them to be save
+    retrain: bool, True if we want to generate new w for the model, False if we reuse previously computed w
+    internal_test: bool, True if we want to compute the accuracy of the validation set, False if not
+    create_submission: bool, True if we want to generate csv file to be submit, False if not
+    add_bias_term: bool, True if we want to add bias term, False if not
+    apply_cross_validation: bool, True if we split the data set into train and validation set
+    """
+
     y, X, Xt, ids = load_csv_data('data/train.csv')
     print('Data shape: ', y.shape, X.shape)
     X_list, y_list, rmv_idx_list = preprocess_train_data_split(X, y)  # doesn't do any train / test splitting
@@ -98,7 +148,7 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
             k_fold = 1
         for k in range(k_fold):
             start_time = datetime.now()
-            current_config = get_run_configs(k=k_fold)[k]
+            current_config = get_run_configs(k=k_fold)[0]
             print(f'Training with config: {current_config}')
             if apply_cross_validation:
                 X_train, y_train, X_test, y_test = split_cross_validation(y, X, k_indices, k, training_config=current_config)
@@ -152,6 +202,12 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
 
 
 def test(w, X_test, y_test):
+    """
+    w: 1-D numpy array of parameter result from the training procedure
+    X_test: 2-D numpy array of test sample from the validation set
+    y_test: 1-D numpy array of labels from the validation set
+    """
+
     y_pred = predict_labels(w, X_test)
     y_test[np.where(y_test <= 0)] = -1
     accuracy = get_accuracy(y_pred, y_test)
@@ -160,6 +216,15 @@ def test(w, X_test, y_test):
 
 
 def run_model(save_weights=True, retrain=True, internal_test=True, create_submission=False, custom_split=True):
+    """
+    save_weights: bool, True if we want to save the w paremeter, False if we don't want them to be save
+    retrain: bool, True if we want to generate new w for the model, False if we reuse previously computed w
+    internal_test: bool, True if we want to compute the accuracy of the validation set, False if not
+    create_submission: bool, True if we want to generate csv file to be submit, False if not
+    custom_split: bool, True if we use the spliting model, i.e. split data set in four according to feature PRI_jet_num, 
+                        False if we don't split the data set
+    """
+
     if custom_split:
         run_model_split()
     else:
