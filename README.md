@@ -30,7 +30,7 @@ To get the results, a file will be automatically created in  `$Data/submissions`
 
 ## 6. Code's architecture:
 
-# Individual scripts:
+#### Individual scripts:
 
 * `implementations.py` : contains the main methods used
 * `model.py`: - creates and run different possible configurations (different methods, different parameters..)
@@ -38,7 +38,7 @@ To get the results, a file will be automatically created in  `$Data/submissions`
             - tests model on test data calculating accuracy
 * `run.py`: runs the model
 
-# Folders: 
+#### Folders: 
 
 1. Folder `data file`: contains training and test data
 
@@ -49,5 +49,5 @@ To get the results, a file will be automatically created in  `$Data/submissions`
 
 3. Folder `figs` : Contains figures for visualisations 
 
-# Notebooks: 
+##### Notebooks: 
 for testing
