@@ -42,11 +42,10 @@ def ridge_regression(y, tx, lambda_):
 
 
 def logistic_regression(y, tx, initial_w, max_iter, gamma):
-    """
-    TODO : need to set all -1 values of y to 0
-    """
+    """implement logistic regression."""
     w = initial_w
     for iter in range(max_iter):
+        #Using gradient descent
         loss = calculate_loss(y, tx, w)
         grad = calculate_gradient(y, tx, w)
         w = w - gamma * grad
@@ -54,12 +53,10 @@ def logistic_regression(y, tx, initial_w, max_iter, gamma):
 
 
 def reg_logistic_regression(y, tx, lambda_ , initial_w, max_iters, gamma):
-    """
-    TODO : need to set all -1 values of y to 0
-    """
+    """implement reg_logistic_regression."""
     w = initial_w
     for iter in range(max_iters):
-        loss, grad = penalized_logistic_regression(y, tx, w, lambda_)
+        loss, grad = penalized_logistic_regression(y, tx, w, lambda_) 
         w = w - gamma * grad
     return w, loss
 
