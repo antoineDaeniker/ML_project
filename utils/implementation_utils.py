@@ -256,7 +256,7 @@ def split_data_for_test_submit(ids, X_test, y, rmv_feat_list, training_config=No
             include_cross_terms=training_config['include_cross_terms'],
         )
         sub_XData_norm,_ = normalize_data(sub_XData)
-        sub_XData_poly = build_poly(sub_XData_norm, **poly_config)
+        sub_XData_norm = build_poly(sub_XData_norm, **poly_config)
         sub_y = y[bool_]
 
         ids_list.append(ids[bool_])
