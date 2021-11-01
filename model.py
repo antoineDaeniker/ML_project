@@ -120,7 +120,19 @@ def train(X, y, rmv_idx, method=reg_logistic_regression, max_iters=800, gamma=1e
 
     return w, loss
 
+def test(w, X_test, y_test):
+    """
+    w: 1-D numpy array of parameter result from the training procedure
+    X_test: 2-D numpy array of test sample from the validation set
+    y_test: 1-D numpy array of labels from the validation set
+    """
 
+    y_pred = predict_labels(w, X_test)
+    y_test[np.where(y_test <= 0)] = -1
+    accuracy = get_accuracy(y_pred, y_test)
+    print(f'Model accuracy: {accuracy}')
+    return accuracy
+    
 def run_model_split(save_weights=False, retrain=True, internal_test=True, create_submission=True, add_bias_term=True,
                     apply_cross_validation=True):
     """
@@ -206,70 +218,9 @@ def run_model_split(save_weights=False, retrain=True, internal_test=True, create
                               f'data/submissions/submission_split{time.strftime("%Y%m%d-%H%M%S")}.csv')
 
 
-def test(w, X_test, y_test):
-    """
-    w: 1-D numpy array of parameter result from the training procedure
-    X_test: 2-D numpy array of test sample from the validation set
-    y_test: 1-D numpy array of labels from the validation set
-    """
-
-    y_pred = predict_labels(w, X_test)
-    y_test[np.where(y_test <= 0)] = -1
-    accuracy = get_accuracy(y_pred, y_test)
-    print(f'Model accuracy: {accuracy}')
-    return accuracy
 
 
-def run_model(save_weights=True, retrain=True, internal_test=True, create_submission=False, custom_split=True):
-    """
-    save_weights: bool, True if we want to save the w paremeter, False if we don't want them to be save
-    retrain: bool, True if we want to generate new w for the model, False if we reuse previously computed w
-    internal_test: bool, True if we want to compute the accuracy of the validation set, False if not
-    create_submission: bool, True if we want to generate csv file to be submit, False if not
-    custom_split: bool, True if we use the spliting model, i.e. split data set in four according to feature PRI_jet_num, 
-                        False if we don't split the data set
-    """
 
-    if custom_split:
-        run_model_split()
-    else:
-        y, X, Xt, ids = load_csv_data('data/train.csv')
-        print('Data shape: ', y.shape, X.shape)
-        X, y, rmv_idx = preprocess_train_data(X, y)
-        print('X Process Shape : ', X.shape)
-        k_fold = 10
-        k_indices = build_k_indices(y, k_fold)
-        ws = []
-        losses = []
-        for k in range(k_fold):
-            X_train, y_train, X_test, y_test = split_cross_validation(y, X, k_indices, k)
-            y_train_dist = np.asarray((np.unique(y_train, return_counts=True))).T
-            y_test_dist = np.asarray((np.unique(y_test, return_counts=True))).T
-            with np.printoptions(precision=0, suppress=True):
-                print(f'y_train distribution: {y_train_dist} \ny_test distribution: {y_test_dist}')
-
-            if not retrain:
-                w = np.loadtxt('sgd_model.csv', delimiter=',')
-            else:
-                start_time = datetime.now()
-                w, loss = train(X_train, y_train, rmv_idx)
-                if save_weights:
-                    np.savetxt('sgd_model.csv', np.asarray(w), delimiter=',')
-                end_time = datetime.now()
-                exection_time = (end_time - start_time).total_seconds()
-                print("Model training time={t:.3f} seconds".format(t=exection_time))
-
-            if internal_test:
-                test(w, X_test, y_test)
-
-        if create_submission:
-            print('Creating submission')
-            w_ = w
-            for i in rmv_idx:
-                w_ = np.insert(w_, i, 0)
-            _, X_test, _, ids_test = load_csv_data('data/test.csv')
-            y_pred = predict_labels(w_, X_test)
-            create_csv_submission(ids_test, y_pred, f'data/submissions/submission_{time.strftime("%Y%m%d-%H%M%S")}.csv')
 
 
 """
